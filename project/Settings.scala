@@ -9,8 +9,6 @@ object Settings {
       Resolver.bintrayRepo("cuzfrog", "maven")
     ),
     organization := "com.github.cuzfrog",
-    scalaVersion := "2.12.2",
-    crossScalaVersions := Seq("2.11.11", "2.12.2"),
     scalacOptions ++= Seq(
       //"-Xlint",
       "-unchecked",
