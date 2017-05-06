@@ -4,45 +4,46 @@ import sbt._
 import Keys._
 
 object SbtTmpfsPlugin extends AutoPlugin {
-  private val extraTargetDirList = Seq(
-    "resolution-cache", "streams"
-  )
+  private val extraTargetDirList = Seq("resolution-cache", "streams")
 
   object autoImport {
-    val tmpfsLinkTarget = taskKey[Unit]("Link tmpfs to cross-target or user defined directories.")
-    val tmpfsTargetDirectories =
+    sealed trait TmpfsDirectoryMode
+    object TmpfsDirectoryMode {
+      case object Symlink extends TmpfsDirectoryMode
+      case object Mount extends TmpfsDirectoryMode
+    }
+
+    val tmpfsOn =
+      taskKey[Unit]("Link tmpfs to cross-target or user defined directories, or mount tmpfs point to target.")
+    val tmpfsLinkDirectories =
       settingKey[Seq[File]]("Directories that will be linked to tmpfs. Default dirs include:"
         + IO.Newline + extraTargetDirList.mkString(IO.Newline))
     val tmpfsBaseDirectory =
-      settingKey[File]("Base directory to contain target dirs. Default is sbt.IO.temporaryDirectory/sbttmpfs.")
+      settingKey[File]("Base directory to contain linked target dirs. Default is sbt.IO.temporaryDirectory/sbttmpfs.")
+    val tmpfsDirectoryMode =
+      settingKey[TmpfsDirectoryMode]("Control mount target or link dir within target. Default: Symlink")
+    val tmpfsMountCommand =
+      settingKey[String]("Default: 'sudo mount -t tmpfs -o size={tmpfsMountSize}m tmpfs' + dirPath.")
+    val tmpfsMountSize = settingKey[Int]("How much RAM limit to tmpfs. In MB. Default: 256m.")
 
     @volatile lazy val baseSbtTmpfsSettings: Seq[Def.Setting[_]] = Seq(
-      tmpfsLinkTarget := {
-        doLink(
-          (tmpfsTargetDirectories in tmpfsLinkTarget).value,
-          (tmpfsBaseDirectory in tmpfsLinkTarget).value,
-          streams.value.log)
+      tmpfsOn := {
+        tmpfsDirectoryMode.value match {
+          case TmpfsDirectoryMode.Symlink =>
+            LinkTool.link(tmpfsLinkDirectories.value, tmpfsBaseDirectory.value)(streams.value.log)
+          case TmpfsDirectoryMode.Mount =>
+            LinkTool.mount(target.value, tmpfsMountCommand.value)
+        }
       },
-      tmpfsTargetDirectories in tmpfsLinkTarget :=
-        crossTarget.value +: extraTargetDirList.map(target.value / _),
-      tmpfsBaseDirectory in tmpfsLinkTarget := sbt.IO.temporaryDirectory / "sbttmpfs",
-      initialize := {
-        val logger = sLog.value
-        logger.debug("[SbtTmpfsPlugin] try to link during initialization.")
-        doLink(
-          (tmpfsTargetDirectories in tmpfsLinkTarget).value,
-          (tmpfsBaseDirectory in tmpfsLinkTarget).value,
-          logger)
-        initialize.value
-      }
+      tmpfsLinkDirectories := crossTarget.value +: extraTargetDirList.map(target.value / _),
+      tmpfsBaseDirectory := sbt.IO.temporaryDirectory / "sbttmpfs",
+      tmpfsMountSize := 256,
+      tmpfsMountCommand := s"sudo mount -t tmpfs -o size=${tmpfsMountSize.value}m tmpfs",
+      tmpfsDirectoryMode := TmpfsDirectoryMode.Symlink,
+      tmpfsOn := (tmpfsOn runBefore (compile in Compile)).value,
+      tmpfsOn := (tmpfsOn triggeredBy clean).value
     )
   }
-
-  private def doLink(tmpfsTgtDirs: Seq[File], base: File, logger: Logger): Unit = {
-    val tool = new LinkTool(logger)
-    tmpfsTgtDirs.foreach(tool.link(_, base))
-  }
-
 
   import autoImport._
 

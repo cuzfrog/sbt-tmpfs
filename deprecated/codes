@@ -1,0 +1,32 @@
+//  def preserveSymlinks(symlinkFiles: Seq[File], baseTmpfsDirectory: File)
+//                      (implicit logger: Logger, linkPreservation: TrieMap[File, File]): Unit = this.synchronized {
+//    logger.debug(s"${symlinkFiles} are to be preserved.")
+//    symlinkFiles.filter(_.isActiveLink).foreach { syml =>
+//      val tmp = Files.createTempFile(baseTmpfsDirectory.toPath, "symlink", ".preserved").toFile
+//      IO.move(syml, tmp)
+//      linkPreservation.put(syml, tmp)
+//      logger.debug(s"${syml.getCanonicalPath} preserved.")
+//    }
+//  }
+//
+//  def restoreSymlinks(implicit linkPreservation: TrieMap[File, File]): Unit = this.synchronized {
+//    linkPreservation.foreach { case (syml, tmp) =>
+//      IO.move(tmp, syml)
+//    }
+//    linkPreservation.clear()
+//  }
+
+
+      //      tmpfsPreserveBeforeClean := {
+      //        implicit val logger = streams.value.log
+      //        LinkTool.preserveSymlinks(
+      //          tmpfsTargetDirectories.value
+      //            .filter(syml => cleanFiles.value.exists(cf => syml.getAbsolutePath.startsWith(cf.getCanonicalPath))),
+      //          tmpfsBaseDirectory.value
+      //        )
+      //      },
+
+
+          //Why not add tmpfsTargetDirectories into cleanKeepFiles is because symlinks maybe broken.
+          //    val tmpfsPreserveBeforeClean = taskKey[Unit]("Preserve active symlinks within cleanFiles.")
+          //    val tmpfsRestoreAfterClean = taskKey[Unit]("Restore preserved symlinks back into dir within cleanFiles.")
