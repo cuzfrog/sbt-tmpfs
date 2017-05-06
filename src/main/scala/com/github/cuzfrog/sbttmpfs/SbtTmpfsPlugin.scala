@@ -4,27 +4,49 @@ import sbt._
 import Keys._
 
 object SbtTmpfsPlugin extends AutoPlugin {
+  private val extraTargetDirList = Seq(
+    "resolution-cache", "streams"
+  )
+
   object autoImport {
     val tmpfsLinkTarget = taskKey[Unit]("Link tmpfs to cross-target or user defined directories.")
-    val tmpfsTargetDirectories = settingKey[Seq[File]]("Directories that will be linked to tmpfs.")
-    val tmpfsBaseDirectory = settingKey[File]("Base directory to contain target dirs. Default is sbt.IO.temporaryDirectory.")
-    val tmpfsAutoLink = settingKey[Seq[File]]("Directories that will be linked to tmpfs.")
+    val tmpfsTargetDirectories =
+      settingKey[Seq[File]]("Directories that will be linked to tmpfs. Default dirs include:"
+        + IO.Newline + extraTargetDirList.mkString(IO.Newline))
+    val tmpfsBaseDirectory =
+      settingKey[File]("Base directory to contain target dirs. Default is sbt.IO.temporaryDirectory/sbttmpfs.")
 
-    lazy val baseSbtTmpfsSettings: Seq[Def.Setting[_]] = Seq(
+    @volatile lazy val baseSbtTmpfsSettings: Seq[Def.Setting[_]] = Seq(
       tmpfsLinkTarget := {
-        (tmpfsTargetDirectories in tmpfsLinkTarget).value.foreach(MountTool.mount(_,
+        doLink(
+          (tmpfsTargetDirectories in tmpfsLinkTarget).value,
           (tmpfsBaseDirectory in tmpfsLinkTarget).value,
           streams.value.log)
-        )
       },
-      tmpfsTargetDirectories in tmpfsLinkTarget := Seq(target.value),
-      tmpfsBaseDirectory in tmpfsLinkTarget := sbt.IO.temporaryDirectory
+      tmpfsTargetDirectories in tmpfsLinkTarget :=
+        crossTarget.value +: extraTargetDirList.map(target.value / _),
+      tmpfsBaseDirectory in tmpfsLinkTarget := sbt.IO.temporaryDirectory / "sbttmpfs",
+      initialize := {
+        val logger = sLog.value
+        logger.debug("[SbtTmpfsPlugin] try to link during initialization.")
+        doLink(
+          (tmpfsTargetDirectories in tmpfsLinkTarget).value,
+          (tmpfsBaseDirectory in tmpfsLinkTarget).value,
+          logger)
+        initialize.value
+      }
     )
   }
 
-  import autoImport.baseSbtTmpfsSettings
+  private def doLink(tmpfsTgtDirs: Seq[File], base: File, logger: Logger): Unit = {
+    val tool = new LinkTool(logger)
+    tmpfsTgtDirs.foreach(tool.link(_, base))
+  }
+
+
+  import autoImport._
 
   override def trigger: PluginTrigger = allRequirements
   override val projectSettings =
-    inConfig(Compile)(baseSbtTmpfsSettings) ++ inConfig(Test)(baseSbtTmpfsSettings)
+    inConfig(Compile)(baseSbtTmpfsSettings)
 }
