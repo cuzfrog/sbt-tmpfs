@@ -1,6 +1,7 @@
 package com.github.cuzfrog.sbttmpfs
 
 import java.io.File
+import java.nio.file.Files
 
 import sbt.{IO, Logger, Process}
 
@@ -14,7 +15,7 @@ private object ExMethod {
         logger.debug(s"[SbtTmpfsPlugin] check if ${f.getAbsolutePath} is a link, while the file does not exist.")
         return false
       }
-      Process(s"find ${f.getAbsolutePath} -type l").!!.isDefined
+      Files.isSymbolicLink(f.toPath)
     }
 
     def isOfTmpfs: Boolean = {
@@ -28,20 +29,14 @@ private object ExMethod {
       existingTmpfsDirs.exists(tpath => f.getAbsolutePath.startsWith(tpath))
     }
 
-    def isActiveLink: Boolean = {
-      if (!f.isLink) return false
-      Process(s"find ${f.getAbsolutePath} -xtype l").!!.isDefined.unary_!
-    }
-
+    def isActiveLink: Boolean = f.isLink && Files.isDirectory(f.toPath)
 
     def getLinkTarget: Option[File] = {
       if (!f.isActiveLink) {
         logger.debug(s"[SbtTmpfsPlugin] ${f.getAbsolutePath} is not an active link, which has no link target.")
         return None
       }
-
-      val linkTargetPath = Process(s"readlink -f ${f.getAbsolutePath}").!!
-      Some(new File(linkTargetPath))
+      Some(f.getCanonicalFile)
     }
   }
 

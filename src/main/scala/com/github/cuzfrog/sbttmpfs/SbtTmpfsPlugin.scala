@@ -50,7 +50,8 @@ object SbtTmpfsPlugin extends AutoPlugin {
       tmpfsLinkBaseDirectory := sbt.IO.temporaryDirectory / "sbttmpfs",
       tmpfsMountDirectories := Seq(target.value),
       tmpfsMountSizeLimit := 256,
-      tmpfsMountCommand := s"sudo mount -t tmpfs -o size=${tmpfsMountSizeLimit.value}m tmpfs"
+      tmpfsMountCommand := s"sudo mount -t tmpfs -o size=${tmpfsMountSizeLimit.value}m tmpfs",
+      tmpfsMappingDirectories := Map.empty
     )
   }
 
@@ -59,14 +60,27 @@ object SbtTmpfsPlugin extends AutoPlugin {
   private val taskDefinition = Seq(
     tmpfsOn := {
       implicit val logger = streams.value.log
-      implicit val mode = tmpfsDirectoryMode.value
-      logger.debug(s"[SbtTmpfsPlugin] mode is $mode.")
+      val mode = tmpfsDirectoryMode.value
+      logger.debug(s"[SbtTmpfsPlugin] execute task tmpfsOn, mode is $mode.")
+      mode match {
+        case TmpfsDirectoryMode.Symlink =>
+          LinkTool.link(tmpfsLinkDirectories.value, tmpfsLinkBaseDirectory.value)
+        case TmpfsDirectoryMode.Mount =>
+          MountTool.mount(tmpfsMountDirectories.value, tmpfsMountCommand.value)
+      }
+    },
+    tmpfsMap := {
+      implicit val logger = streams.value.log
       tmpfsDirectoryMode.value match {
         case TmpfsDirectoryMode.Symlink =>
-          TmpfsTool.link(tmpfsLinkDirectories.value, tmpfsLinkBaseDirectory.value)
+          MapTool.mapByLink(tmpfsMappingDirectories.value, tmpfsLinkBaseDirectory.value)
         case TmpfsDirectoryMode.Mount =>
-          TmpfsTool.mount(tmpfsMountDirectories.value, tmpfsMountCommand.value)
+          MapTool.mapByMount(tmpfsMappingDirectories.value, tmpfsMountCommand.value)
       }
+    },
+    tmpfsSyncMapping := {
+      implicit val logger = streams.value.log
+      MapTool.syncMapping(tmpfsMappingDirectories.value)
     }
   )
 
