@@ -3,14 +3,15 @@ package com.github.cuzfrog.sbttmpfs
 import java.io.File
 import java.nio.file.Paths
 
+import com.github.cuzfrog.sbttmpfs.SbtTmpfsPlugin.autoImport.TmpfsDirectoryMode
 import sbt._
 
 import scala.collection.concurrent.TrieMap
 
-private object LinkTool {
+private object TmpfsTool {
 
   //symlinks and their target tmpfs dir, used for clean old links after task clean.
-  private val linkedDirsRecord = TrieMap.empty[File, File]
+  private val linkedDirsRecord = TrieMap.empty[String, File]
 
   /**
     * Try to symbolic-link target directories into base tmpfs directory.
@@ -26,8 +27,12 @@ private object LinkTool {
     * @param baseTmpfsDirectory a base dir that should be of tmpfs.
     * @param logger             sbt logger.
     */
-  def link(targetDirs: Seq[File], baseTmpfsDirectory: File)(implicit logger: Logger): Unit = this.synchronized {
+  def link(targetDirs: Seq[File], baseTmpfsDirectory: File)
+          (implicit logger: Logger, mode: TmpfsDirectoryMode): Unit = this.synchronized {
     targetDirs.foreach { targetDir =>
+      //logger.debug(s"[SbtTmpfsPlugin] try to link target dir:${targetDir.getAbsolutePath}")
+      //logger.debug(s"[SbtTmpfsPlugin] is active link?${targetDir.isActiveLink}")
+
       if (targetDir.isActiveLink || targetDir.isOfTmpfs) {
         logger.debug("[SbtTmpfsPlugin] targetDir is already an active symlink or of tmpfs.")
         return
@@ -46,7 +51,7 @@ private object LinkTool {
         val randomBaseDir = IO.createUniqueDirectory(baseTmpfsDirectory)
         val f = Paths.get(randomBaseDir.getAbsolutePath, targetDir.getName).toFile
         IO.createDirectory(f)
-        logger.debug("[SbtTmpfsPlugin] new tmpfs dir created:" + f.getCanonicalPath)
+        logger.debug("[SbtTmpfsPlugin] new tmpfs dir created:" + f.getAbsolutePath)
         f
       }
 
@@ -57,8 +62,8 @@ private object LinkTool {
 
       if (!targetDir.getParentFile.exists) IO.createDirectory(targetDir.getParentFile)
 
-      val cmd = s"ln -snf ${tmpfsDir.getCanonicalPath} ${targetDir.getParent}/"
-      logger.debug("[SbtTmpfsPlugin] execute shell command:" + cmd)
+      val cmd = s"ln -snf ${tmpfsDir.getAbsolutePath} ${targetDir.getParent}/"
+      logger.debug("[SbtTmpfsPlugin] Try to link, execute shell command:" + cmd)
       val output = Process(cmd) !!
 
       if (output.isDefined) {
@@ -66,7 +71,9 @@ private object LinkTool {
       } else {
         //if linking is successful, record symlink and its linked-target tmpfs dir.
         //And delete the previous linked-target tmpfs dir.
-        linkedDirsRecord.put(targetDir, tmpfsDir).foreach(IO.delete)
+        linkedDirsRecord.put(targetDir.getAbsolutePath, tmpfsDir).foreach { old =>
+          IO.delete(old.getParentFile)
+        }
       }
     }
   }
@@ -80,10 +87,10 @@ private object LinkTool {
     * @param mountCmd  the shell mount command string.
     * @param logger    sbt logger.
     */
-  def mount(targetDir: File, mountCmd: String)(implicit logger: Logger): Unit = {
+  def mount(targetDir: File, mountCmd: String)(implicit logger: Logger, mode: TmpfsDirectoryMode): Unit = {
     if (!targetDir.isDirectory) {
       logger.warn(s"[SbtTmpfsPlugin] targetDir is not a directory," +
-        s" abort mounting tmpfs. Path:${targetDir.getCanonicalPath}")
+        s" abort mounting tmpfs. Path:${targetDir.getAbsolutePath}")
       return
     }
 
@@ -91,8 +98,9 @@ private object LinkTool {
       logger.debug("[SbtTmpfsPlugin] targetDir is already of tmpfs, abort mounting.")
       return
     }
-
-    val output = Process(s"mountCmd ${targetDir.getCanonicalPath}").!!
+    val cmd = s"$mountCmd ${targetDir.getAbsolutePath}"
+    logger.debug("[SbtTmpfsPlugin] Try to mount, execute shell command:" + cmd)
+    val output = Process(cmd).!!
     if (output.isDefined) logger.error(s"[SbtTmpfsPlugin] tmpfs mount failed with info: $output")
   }
 
@@ -100,15 +108,15 @@ private object LinkTool {
   private implicit class ExFile(f: File)(implicit logger: Logger) {
     def isLink: Boolean = {
       if (!f.exists) {
-        logger.debug(s"[SbtTmpfsPlugin] check if ${f.getCanonicalPath} is a link, while the file does not exist.")
+        logger.debug(s"[SbtTmpfsPlugin] check if ${f.getAbsolutePath} is a link, while the file does not exist.")
         return false
       }
-      Process(s"find ${f.getCanonicalPath} -type l").!!.isDefined
+      Process(s"find ${f.getAbsolutePath} -type l").!!.isDefined
     }
 
     def isOfTmpfs: Boolean = {
       if (!f.exists) {
-        logger.debug(s"[SbtTmpfsPlugin] check if ${f.getCanonicalPath} is of tmpfs, while the file does not exist.")
+        logger.debug(s"[SbtTmpfsPlugin] check if ${f.getAbsolutePath} is of tmpfs, while the file does not exist.")
         return false
       }
       val existingTmpfsDirs = Process("df").!!.split(raw"""${IO.Newline}""")
@@ -119,17 +127,17 @@ private object LinkTool {
 
     def isActiveLink: Boolean = {
       if (!f.isLink) return false
-      Process(s"find ${f.getCanonicalPath} -xtype l").!!.isDefined.unary_!
+      Process(s"find ${f.getAbsolutePath} -xtype l").!!.isDefined.unary_!
     }
 
 
     def getLinkTarget: Option[File] = {
       if (!f.isActiveLink) {
-        logger.debug(s"[SbtTmpfsPlugin] ${f.getCanonicalPath} is not an active link, which has no link target.")
+        logger.debug(s"[SbtTmpfsPlugin] ${f.getAbsolutePath} is not an active link, which has no link target.")
         return None
       }
 
-      val linkTargetPath = Process(s"readlink -f ${f.getCanonicalPath}").!!
+      val linkTargetPath = Process(s"readlink -f ${f.getAbsolutePath}").!!
       Some(new File(linkTargetPath))
     }
   }

@@ -1,10 +1,9 @@
 package com.github.cuzfrog.sbttmpfs
 
-import sbt._
+import sbt.{Def, _}
 import Keys._
 
 object SbtTmpfsPlugin extends AutoPlugin {
-  private val extraTargetDirList = Seq("resolution-cache", "streams")
 
   object autoImport {
     sealed trait TmpfsDirectoryMode
@@ -16,38 +15,41 @@ object SbtTmpfsPlugin extends AutoPlugin {
     val tmpfsOn =
       taskKey[Unit]("Link tmpfs to cross-target or user defined directories, or mount tmpfs point to target.")
     val tmpfsLinkDirectories =
-      settingKey[Seq[File]]("Directories that will be linked to tmpfs. Default dirs include:"
-        + IO.Newline + extraTargetDirList.mkString(IO.Newline))
+      settingKey[Seq[File]]("Directories that will be linked to tmpfs. Show this key to see default.")
     val tmpfsBaseDirectory =
       settingKey[File]("Base directory to contain linked target dirs. Default is sbt.IO.temporaryDirectory/sbttmpfs.")
     val tmpfsDirectoryMode =
       settingKey[TmpfsDirectoryMode]("Control mount target or link dir within target. Default: Symlink")
     val tmpfsMountCommand =
       settingKey[String]("Default: 'sudo mount -t tmpfs -o size={tmpfsMountSize}m tmpfs' + dirPath.")
-    val tmpfsMountSize = settingKey[Int]("How much RAM limit to tmpfs. In MB. Default: 256m.")
+    val tmpfsMountSizeLimit = settingKey[Int]("How much RAM limit to tmpfs. In MB. Default: 256m.")
 
-    @volatile lazy val baseSbtTmpfsSettings: Seq[Def.Setting[_]] = Seq(
-      tmpfsOn := {
-        tmpfsDirectoryMode.value match {
-          case TmpfsDirectoryMode.Symlink =>
-            LinkTool.link(tmpfsLinkDirectories.value, tmpfsBaseDirectory.value)(streams.value.log)
-          case TmpfsDirectoryMode.Mount =>
-            LinkTool.mount(target.value, tmpfsMountCommand.value)
-        }
-      },
+    private val extraTargetDirList = Seq("resolution-cache")
+    @volatile lazy val defaultSbtTmpfsSettings: Seq[Def.Setting[_]] = Seq(
       tmpfsLinkDirectories := crossTarget.value +: extraTargetDirList.map(target.value / _),
       tmpfsBaseDirectory := sbt.IO.temporaryDirectory / "sbttmpfs",
-      tmpfsMountSize := 256,
-      tmpfsMountCommand := s"sudo mount -t tmpfs -o size=${tmpfsMountSize.value}m tmpfs",
-      tmpfsDirectoryMode := TmpfsDirectoryMode.Symlink,
-      tmpfsOn := (tmpfsOn runBefore (compile in Compile)).value,
-      tmpfsOn := (tmpfsOn triggeredBy clean).value
+      tmpfsMountSizeLimit := 256,
+      tmpfsMountCommand := s"sudo mount -t tmpfs -o size=${tmpfsMountSizeLimit.value}m tmpfs",
+      tmpfsDirectoryMode := TmpfsDirectoryMode.Symlink
     )
   }
 
   import autoImport._
 
   override def trigger: PluginTrigger = allRequirements
-  override val projectSettings =
-    inConfig(Compile)(baseSbtTmpfsSettings)
+  override val projectSettings: Seq[Def.Setting[_]] = defaultSbtTmpfsSettings ++ Seq(
+    tmpfsOn := {
+      implicit val logger = streams.value.log
+      implicit val mode = tmpfsDirectoryMode.value
+      logger.debug(s"[SbtTmpfsPlugin] mode is $mode.")
+      tmpfsDirectoryMode.value match {
+        case TmpfsDirectoryMode.Symlink =>
+          TmpfsTool.link(tmpfsLinkDirectories.value, tmpfsBaseDirectory.value)
+        case TmpfsDirectoryMode.Mount =>
+          TmpfsTool.mount(target.value, tmpfsMountCommand.value)
+      }
+    },
+    tmpfsOn := (tmpfsOn runBefore compile.in(Compile)).value,
+    tmpfsOn := (tmpfsOn triggeredBy clean).value
+  )
 }
