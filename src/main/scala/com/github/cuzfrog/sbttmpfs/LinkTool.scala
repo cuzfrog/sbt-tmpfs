@@ -78,31 +78,32 @@ private object TmpfsTool {
     }
   }
   /**
-    * Try to mount target directory with tmpfs.
+    * Try to mount target directories with tmpfs.
     * <br><br>
     * If target is not directory or does not exist, abort.
     * If target is already of tmpfs, abort.
     *
-    * @param targetDir the target directory is about to mount to.
-    * @param mountCmd  the shell mount command string.
-    * @param logger    sbt logger.
+    * @param targetDirs the target directories to mount with tmpfs.
+    * @param mountCmd   the shell mount command string.
+    * @param logger     sbt logger.
     */
-  def mount(targetDir: File, mountCmd: String)(implicit logger: Logger, mode: TmpfsDirectoryMode): Unit = {
-    if (!targetDir.isDirectory) {
-      logger.warn(s"[SbtTmpfsPlugin] targetDir is not a directory," +
-        s" abort mounting tmpfs. Path:${targetDir.getAbsolutePath}")
-      return
-    }
+  def mount(targetDirs: Seq[File], mountCmd: String)(implicit logger: Logger, mode: TmpfsDirectoryMode): Unit =
+    targetDirs.foreach { targetDir =>
+      if (!targetDir.isDirectory) {
+        logger.warn(s"[SbtTmpfsPlugin] targetDir is not a directory," +
+          s" abort mounting tmpfs. Path:${targetDir.getAbsolutePath}")
+        return
+      }
 
-    if (targetDir.isOfTmpfs) {
-      logger.debug("[SbtTmpfsPlugin] targetDir is already of tmpfs, abort mounting.")
-      return
+      if (targetDir.isOfTmpfs) {
+        logger.debug("[SbtTmpfsPlugin] targetDir is already of tmpfs, abort mounting.")
+        return
+      }
+      val cmd = s"$mountCmd ${targetDir.getAbsolutePath}"
+      logger.debug("[SbtTmpfsPlugin] Try to mount, execute shell command:" + cmd)
+      val output = Process(cmd).!!
+      if (output.isDefined) logger.error(s"[SbtTmpfsPlugin] tmpfs mount failed with info: $output")
     }
-    val cmd = s"$mountCmd ${targetDir.getAbsolutePath}"
-    logger.debug("[SbtTmpfsPlugin] Try to mount, execute shell command:" + cmd)
-    val output = Process(cmd).!!
-    if (output.isDefined) logger.error(s"[SbtTmpfsPlugin] tmpfs mount failed with info: $output")
-  }
 
   // -------------------------- Helpers --------------------------
   private implicit class ExFile(f: File)(implicit logger: Logger) {
