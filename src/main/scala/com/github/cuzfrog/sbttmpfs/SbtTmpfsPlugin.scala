@@ -18,17 +18,15 @@ object SbtTmpfsPlugin extends AutoPlugin {
       settingKey[TmpfsDirectoryMode]("Control mount target or link dir within target. Default: Symlink")
     val tmpfsMappingDirectories =
       settingKey[Map[File, File]](
-        """|Keys are source directories that will be copied to tmpfs.
-           |Values are destination dirs where keys are copied to.
-           |  If destination dir is within tmpfs or is an active symlink, then only do the copy.
-           |  Else link/mount the destination to/with tmpfs first, then do the copy.
+        """|Keys are source directories that will be synchronized to tmpfs.
+           |Values are destination dirs where keys are synchronized to.
+           |  If destination dir is within tmpfs or is an active symlink, then only do the sync.
+           |  Else, link/mount the destination to/with tmpfs first, then do the sync.
            |Default is empty.
         """.stripMargin
       )
-    val tmpfsMap =
-      taskKey[Unit]("Map dirs defined in tmpfsMappingDirectories.")
     val tmpfsSyncMapping =
-      taskKey[Unit]("Synchronize dirs defined in tmpfsMappingDirectories by copying again.")
+      taskKey[Unit]("Synchronize dirs defined in tmpfsMappingDirectories.")
 
     // --------- link -------- keys --------
     val tmpfsLinkDirectories =
@@ -69,25 +67,21 @@ object SbtTmpfsPlugin extends AutoPlugin {
           MountTool.mount(tmpfsMountDirectories.value, tmpfsMountCommand.value)
       }
     },
-    tmpfsMap := {
+    tmpfsSyncMapping := {
       implicit val logger = streams.value.log
       tmpfsDirectoryMode.value match {
         case TmpfsDirectoryMode.Symlink =>
-          MapTool.mapByLink(tmpfsMappingDirectories.value, tmpfsLinkBaseDirectory.value)
+          SyncTool.syncByLink(tmpfsMappingDirectories.value, tmpfsLinkBaseDirectory.value)
         case TmpfsDirectoryMode.Mount =>
-          MapTool.mapByMount(tmpfsMappingDirectories.value, tmpfsMountCommand.value)
+          SyncTool.syncByMount(tmpfsMappingDirectories.value, tmpfsMountCommand.value)
       }
-    },
-    tmpfsSyncMapping := {
-      implicit val logger = streams.value.log
-      MapTool.syncMapping(tmpfsMappingDirectories.value)
     }
   )
 
   private val taskDependentRelationships = Seq(
     tmpfsOn := (tmpfsOn runBefore compile.in(Compile)).value,
     tmpfsOn := (tmpfsOn triggeredBy clean).value,
-    tmpfsMap := (tmpfsMap triggeredBy tmpfsOn).value
+    tmpfsSyncMapping := (tmpfsSyncMapping triggeredBy tmpfsOn).value
   )
 
   override def trigger: PluginTrigger = allRequirements

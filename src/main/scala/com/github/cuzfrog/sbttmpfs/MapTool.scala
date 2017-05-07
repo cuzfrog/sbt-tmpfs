@@ -8,61 +8,58 @@ import sbt._
 /**
   * Created by cuz on 17-5-7.
   */
-private object MapTool {
-  def mapByLink(mappingDirs: Map[File, File], baseTmpfsDirectory: File)(implicit logger: Logger): Unit = {
-    mappingDirs.filter(checkBeforeMapping).foreach { case (src, dest) =>
-      //If no error message returned, do the copy.
-      if (!LinkTool.linkOne(dest, baseTmpfsDirectory).isDefined) IO.copyDirectory(src, dest)
+private object SyncTool {
+  def syncByLink(mappingDirs: Map[File, File], baseTmpfsDirectory: File)(implicit logger: Logger): Unit = {
+    mappingDirs.filter(check).foreach { case (src, dest) =>
+
+      //if dest not tmpfs yet, link it.
+      if (!dest.isActiveLink && !dest.isOfTmpfs) {
+        //if link failed, abort sync.
+        if (!LinkTool.linkOne(dest, baseTmpfsDirectory).isDefined) {
+          logger.debug(s"[SbtTmpfsPlugin] link failed, abort sync. Dest path: $dest")
+          return
+        }
+      }
+
+      sync(src, dest)
     }
   }
 
-  def mapByMount(mappingDirs: Map[File, File], mountCmd: String)(implicit logger: Logger): Unit = {
-    mappingDirs.filter(checkBeforeMapping).foreach { case (src, dest) =>
-      if (!MountTool.mountOne(dest, mountCmd).isDefined) IO.copyDirectory(src, dest)
+  def syncByMount(mappingDirs: Map[File, File], mountCmd: String)(implicit logger: Logger): Unit = {
+    mappingDirs.filter(check).foreach { case (src, dest) =>
+
+      //if dest not tmpfs yet, mount it.
+      if (!dest.isActiveLink && !dest.isOfTmpfs) {
+        //if mounting failed, abort sync.
+        if (!MountTool.mountOne(dest, mountCmd).isDefined) {
+          logger.debug(s"[SbtTmpfsPlugin] mount failed, abort sync. Dest path: $dest")
+          return
+        }
+      }
+
+      sync(src, dest)
     }
   }
 
-  private def checkBeforeMapping(in: (File, File))(implicit logger: Logger): Boolean = {
+
+  private def check(in: (File, File))(implicit logger: Logger): Boolean = {
     val (src, dest) = in
     if (!src.exists || !src.isDirectory) {
-      logger.warn(s"[SbtTmpfsPlugin] source dir does not exist or is not a dir, abort mapping." +
+      logger.warn(s"[SbtTmpfsPlugin] source dir does not exist or is not a dir, abort sync." +
         s" Path: ${src.getAbsolutePath}")
       return false
     }
 
-    if (dest.isActiveLink || dest.isOfTmpfs) {
-      logger.debug(s"[SbtTmpfsPlugin] dest $dest is already an active symlink or of tmpfs, abort mapping.")
-      return false
-    }
-
-    if (dest.exists && !dest.isDirectory) {
-      logger.debug(s"[SbtTmpfsPlugin] dest $dest exists but not a dir, abort mapping." +
-        s" (also not an active symlink or tmpfs)")
+    if (dest.exists && !dest.isLink && !dest.isDirectory) {
+      logger.warn(s"[SbtTmpfsPlugin] dest dir exists, but not a link or dir," +
+        s" so should not overwrite it, abort sync. Path: ${src.getAbsolutePath}")
       return false
     }
 
     true
   }
 
-  def syncMapping(mappingDirs: Map[File, File])(implicit logger: Logger): Unit = {
-    mappingDirs.filter(checkBeforeSync).foreach { case (src, dest) =>
-      IO.copyDirectory(src, dest)
-    }
+  private def sync(src: File, dest: File)(implicit logger: Logger): Unit = {
+    IO.copyDirectory(src, dest)
   }
-
-  private def checkBeforeSync(in: (File, File))(implicit logger: Logger): Boolean = {
-    val (src, dest) = in
-    if (!src.exists || !src.isDirectory) {
-      logger.warn(s"[SbtTmpfsPlugin] source dir does not exist or is not a dir, abort sync mapping." +
-        s" Path: ${src.getAbsolutePath}")
-      return false
-    }
-
-    if (!dest.isActiveLink && !dest.isOfTmpfs) {
-      logger.debug(s"[SbtTmpfsPlugin] dest $dest is not an active symlink or of tmpfs, abort sync mapping.")
-      return false
-    }
-    true
-  }
-
 }
