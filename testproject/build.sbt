@@ -19,4 +19,4 @@ lazy val subproject = (project in file("./subproject"))
 
   )
 
-lazy val mappings =
+lazy val mappings = Map()

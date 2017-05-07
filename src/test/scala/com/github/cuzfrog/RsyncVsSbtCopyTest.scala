@@ -17,25 +17,33 @@ object RsyncVsSbtCopyTest {
 
   private val testDirs = Seq(
     TestDirGrp("small", sbt.IO.createTemporaryDirectory, 100, 10, 3),
-    TestDirGrp("medium", sbt.IO.createTemporaryDirectory, 3000, 100, 6),
-    TestDirGrp("big", sbt.IO.createTemporaryDirectory, 50000, 200, 12)
+    TestDirGrp("medium", sbt.IO.createTemporaryDirectory, 1000, 100, 6),
+    TestDirGrp("big", sbt.IO.createTemporaryDirectory, 10000, 100, 12),
+    TestDirGrp("big2", sbt.IO.createTemporaryDirectory, 1000, 1000, 12)
   ).map { grp =>
     FileGen.populateDir(grp.dir.toPath, grp.fileCnt, grp.maxFileSizeInKB, grp.maxDirDepth)
     grp
   }
 
   private def rsync(src: File, dest: File): Unit = {
-    sbt.Process(s"rsync -a ${src.getAbsolutePath}/ ${dest.getAbsolutePath}/")
+    sbt.Process(s"rsync -a ${src.getAbsolutePath}/ ${dest.getAbsolutePath}/").!
   }
 
-  def main(args: Array[String]): Unit = args.headOption match {
-    case Some("sbt") => testDirs.foreach { grp =>
-      syncTestSbt(grp, 5, sbt.IO.copyDirectory(_, _), "sbt")
+  private def cp(src: File, dest: File):Unit = {
+    sbt.Process(s"""cp -au ${src.getAbsolutePath}/. ${dest.getAbsolutePath}""").!
+  }
+
+
+  def main(args: Array[String]): Unit = {
+    testDirs.foreach { grp =>
+      syncTestSbt(grp, 10, sbt.IO.copyDirectory(_, _), "sbt")
     }
-    case Some("rsync") => testDirs.foreach { grp =>
-      syncTestSbt(grp, 5, rsync, "rsync")
+    testDirs.foreach { grp =>
+      syncTestSbt(grp, 10, rsync, "rsync")
     }
-    case _ => println("Bad args.")
+    testDirs.foreach { grp =>
+      syncTestSbt(grp, 10, cp, "cp")
+    }
   }
 
   private def syncTestSbt(grp: TestDirGrp, times: Int,
@@ -45,14 +53,14 @@ object RsyncVsSbtCopyTest {
     sbt.IO.copyDirectory(grp.dir, dest)
     def updateDir() = FileGen.updateDir(grp.dir.toPath, grp.fileCnt / 100, grp.maxFileSizeInKB / 10, grp.fileCnt / 100)
 
-    println(s"Test(${grp.name}) warms up:")
+    println(s"Test($functionName|${grp.name}) warms up:")
     (1 to warmTimes).foreach { i =>
       updateDir()
       testFunc(grp.dir, dest)
       print(s"..$i")
     }
     println()
-    println(s"Test(${grp.name}) begins:")
+    println(s"Test($functionName|${grp.name}) begins:")
 
     val totalTimeElapsed = (1 to times).map { i =>
       updateDir()
@@ -60,25 +68,25 @@ object RsyncVsSbtCopyTest {
       testFunc(grp.dir, dest)
       val time2 = System.currentTimeMillis()
       val timeElapsed = time2 - time1
-      println(s"Round-$i time elapsed: $timeElapsed")
+      println(s"Round-$i time elapsed: $timeElapsed ms")
       timeElapsed
     }.sum
 
-    println(s"Test(${grp.name}): total rounds:$times, total time elapsed: $totalTimeElapsed")
+    println(s"Test($functionName|${grp.name}): total rounds:$times, total time elapsed: $totalTimeElapsed ms")
   }
 }
 
 case class TestDirGrp(name: String, dir: File, fileCnt: Int, maxFileSizeInKB: Int, maxDirDepth: Int)
 
-object CreateTestDirsOnDisk extends App {
-  val dir = FileGen.populateDir(
-    dir = sbt.IO.createTemporaryDirectory.toPath,
-    fileTotalCount = 100,
-    maxFileSizeInKB = 2,
-    maxDirDepth = 3)
-
-  println(dir)
-}
+//object CreateTestDirsOnDisk extends App {
+//  val dir = FileGen.populateDir(
+//    dir = sbt.IO.createTemporaryDirectory.toPath,
+//    fileTotalCount = 100,
+//    maxFileSizeInKB = 2,
+//    maxDirDepth = 3)
+//
+//  println(dir)
+//}
 
 private object FileGen {
   /** Given a dir, populate the dir with specified random files and return it. */
@@ -136,8 +144,8 @@ private object FileGen {
           Files.write(file, dataStream.map(_.toByte).toArray)
           ramify(fileToAddCount + 1, fileToModifyCount, parent)
         } else if (fileToModifyCount < fileToModifyTotalCount) { //modify existing file
-          val fileList = parent.listFiles
-          val size = fileList.size
+          val fileList = parent.listFiles.filter(_.isFile)
+          val size = fileList.length
           val modifiedCount = if (size > 0) {
             val file = fileList(Random.nextInt(size))
             val dataStream = Random.alphanumeric.take(Random.nextInt(maxFileSizeInKB) * 1024 + 1)
