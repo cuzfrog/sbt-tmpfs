@@ -1,5 +1,5 @@
 # rsync vs sbt.IO 
-## File synchronization performance test.
+## Local file synchronization performance test.
 
 I met this problem, how to choose an at-hand algorithm to sync mapped directories?
 
@@ -32,22 +32,30 @@ Measure how much time elapsed during synchronization.
 You can do it yourself:
 ([Test source code](../src/test/scala/com/github/cuzfrog/RsyncVsSbtCopyTest.scala))
 
-3. Hardware: my dev pc: xeon-1230v2 3.3-3.7G, 32GB-DDR3-1600, ubuntu 16.04
+3. Accoutrement: 
+
+* my dev pc: xeon-1230v2 3.3-3.7G, 32GB-DDR3-1600, ubuntu 16.04
+
+* rsync version 3.1.1
+
+* cp version 8.25
 
 ## Test result:
 
-1. Source in RAM, 5 rounds total time cost:
+1. Source in RAM, 10 rounds total time cost:
  
-|   | small | medium | big | big2 |
+| Tpe  | small | medium | big | big2 |
 | ------- | ------ | ------- | ------ | ------ |
-| sbt.IO  | 10 ms  | 104 ms | 1101 ms | 109 ms |
-| rsync -a  | 230 ns  | 298 ns | 724 ns | 297 ns |
-| cp -au  | 228 ns  | 289 ns | 729 ns | 331 ns |
+| sbt.IO  | 29 ms  | 202 ms | 2274 ms | 218 ms |
+| rsync -a  | 454 ms  | 598 ms | 1590 ms | 617 ms |
+| cp -au (winner) | 27 ms  | 134 ms | 1505 ms | 149 ms |
 
-2. Source in SSD, 5 rounds total time cost:
+2. Source in RAM, **no modification on source dir**, 10 rounds total time cost:
+ 
+ 
  
 |   | small | medium |
 | ------- | ------ | ------- |
-| sbt.IO  | 13 ms  | 109 ms | 
-| rsync -a  | 228 ns  | 289 ns |
-| cp -au  | 228 ns  | 289 ns | 
+| sbt.IO  | - ms  | - ms | 
+| rsync -a  | - ms  | - ms |
+| cp -au  | - ms  | - ms | 
