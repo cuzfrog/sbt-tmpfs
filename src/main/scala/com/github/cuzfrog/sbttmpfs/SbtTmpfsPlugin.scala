@@ -18,7 +18,7 @@ object SbtTmpfsPlugin extends AutoPlugin {
       settingKey[TmpfsDirectoryMode]("Control mount target or link dir within target. Default: Symlink")
     val tmpfsMappingDirectories =
       settingKey[Map[File, File]](
-        """|Keys are directories that will be copied to tmpfs.
+        """|Keys are source directories that will be copied to tmpfs.
            |Values are destination dirs where keys are copied to.
            |  If destination dir is within tmpfs or is an active symlink, then only do the copy.
            |  Else link/mount the destination to/with tmpfs first, then do the copy.
@@ -72,7 +72,8 @@ object SbtTmpfsPlugin extends AutoPlugin {
 
   private val taskDependentRelationships = Seq(
     tmpfsOn := (tmpfsOn runBefore compile.in(Compile)).value,
-    tmpfsOn := (tmpfsOn triggeredBy clean).value
+    tmpfsOn := (tmpfsOn triggeredBy clean).value,
+    tmpfsMap := (tmpfsMap triggeredBy tmpfsOn).value
   )
 
   override def trigger: PluginTrigger = allRequirements
