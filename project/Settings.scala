@@ -46,8 +46,7 @@ object Settings {
         "password = " + bintrayPass
       )
       IO.writeLines(Paths.get(home, ".bintray", ".credentials").toFile, content)
-    },
-    generateCredential := (generateCredential runBefore (compile in Compile)).value
+    }
   )
 
   val readmeVersionSettings = Seq(

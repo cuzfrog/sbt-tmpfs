@@ -1,12 +1,8 @@
-import java.nio.file.Paths
-
-import MyTasks.generateCredential
 import sbt.Keys._
 import Settings._
 
 shellPrompt in ThisBuild := { state => Project.extract(state).currentRef.project + "> " }
 sbtPlugin := true
-isSnapshot in ThisBuild := true
 
 lazy val root = (project in file("."))
   .settings(commonSettings, publicationSettings, readmeVersionSettings)
