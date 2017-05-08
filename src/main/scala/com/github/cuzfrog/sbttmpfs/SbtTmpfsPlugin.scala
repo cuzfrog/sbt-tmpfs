@@ -12,12 +12,14 @@ object SbtTmpfsPlugin extends AutoPlugin {
       case object Mount extends TmpfsDirectoryMode
     }
 
-    val tmpfsOn =
-      taskKey[Unit]("Link tmpfs to cross-target or user defined directories, or mount tmpfs point to target.")
+    val tmpfsOn = taskKey[Unit]("Link or mount tmpfs.")
+    val tmpfsLink =
+      taskKey[Unit]("Link tmpfs to cross-target or user defined directories.")
+    val tmpfsMount = taskKey[Unit]("Mount tmpfs point to target.")
     val tmpfsDirectoryMode =
       settingKey[TmpfsDirectoryMode]("Control mount target or link dir within target. Default: Symlink")
     val tmpfsMappingDirectories =
-      settingKey[Map[File, File]](
+      settingKey[Map[sbt.File, sbt.File]](
         """|Keys are source directories that will be synchronized to tmpfs.
            |Values are destination dirs where keys are synchronized to.
            |  If destination dir is within tmpfs or is an active symlink, then only do the sync.
@@ -49,39 +51,55 @@ object SbtTmpfsPlugin extends AutoPlugin {
       tmpfsMountDirectories := Seq(target.value),
       tmpfsMountSizeLimit := 256,
       tmpfsMountCommand := s"sudo mount -t tmpfs -o size=${tmpfsMountSizeLimit.value}m tmpfs",
-      tmpfsMappingDirectories := Map.empty
+      tmpfsMappingDirectories := Map.empty,
+      cleanKeepFiles ++= tmpfsMappingDirectories.value.values.toSeq
     )
   }
 
   import autoImport._
 
   private val taskDefinition = Seq(
-    tmpfsOn := {
+    tmpfsLink := {
       implicit val logger = streams.value.log
       val mode = tmpfsDirectoryMode.value
-      logger.debug(s"[SbtTmpfsPlugin] execute task tmpfsOn, mode is $mode.")
-      mode match {
-        case TmpfsDirectoryMode.Symlink =>
-          LinkTool.link(tmpfsLinkDirectories.value, tmpfsLinkBaseDirectory.value)
-        case TmpfsDirectoryMode.Mount =>
-          MountTool.mount(tmpfsMountDirectories.value, tmpfsMountCommand.value)
-      }
+      if (mode == TmpfsDirectoryMode.Symlink) {
+        LinkTool.link(tmpfsLinkDirectories.value, tmpfsLinkBaseDirectory.value)
+      } else logger.debug(s"[SbtTmpfsPlugin] call tmpfsLink, but mode is: $mode, abort.")
     },
-    tmpfsSyncMapping := {
+    tmpfsMount := {
       implicit val logger = streams.value.log
-      tmpfsDirectoryMode.value match {
-        case TmpfsDirectoryMode.Symlink =>
+      val mode = tmpfsDirectoryMode.value
+      if (mode == TmpfsDirectoryMode.Mount) {
+        MountTool.mount(tmpfsMountDirectories.value, tmpfsMountCommand.value)
+      } else logger.debug(s"[SbtTmpfsPlugin] call tmpfsMount, but mode is: $mode abort.")
+    },
+    tmpfsSyncMapping := Def.taskDyn {
+      implicit val logger = streams.value.log
+      val mode = tmpfsDirectoryMode.value
+      logger.debug(s"[SbtTmpfsPlugin] sync mapping with mode: $mode")
+      mode match {
+        case TmpfsDirectoryMode.Symlink => Def.task {
           SyncTool.syncByLink(tmpfsMappingDirectories.value, tmpfsLinkBaseDirectory.value)
-        case TmpfsDirectoryMode.Mount =>
+        }
+        case TmpfsDirectoryMode.Mount => Def.task {
           SyncTool.syncByMount(tmpfsMappingDirectories.value, tmpfsMountCommand.value)
+        }
       }
-    }
+    }.value,
+    tmpfsOn := Def.taskDyn {
+      tmpfsDirectoryMode.value match {
+        case TmpfsDirectoryMode.Symlink => tmpfsLink
+        case TmpfsDirectoryMode.Mount => tmpfsMount
+      }
+    }.value
   )
 
+  private val tmpfsLinkChain = taskKey[Unit]("")
+
   private val taskDependentRelationships = Seq(
-    tmpfsOn := (tmpfsOn runBefore compile.in(Compile)).value,
-    tmpfsOn := (tmpfsOn triggeredBy clean).value,
-    tmpfsSyncMapping := (tmpfsSyncMapping triggeredBy tmpfsOn).value
+    tmpfsLink := (tmpfsLink runBefore compile.in(Compile)).value,
+    tmpfsLink := (tmpfsLink triggeredBy clean).value,
+    tmpfsSyncMapping := (tmpfsSyncMapping triggeredBy(tmpfsOn, tmpfsLink, tmpfsMount)).value
   )
 
   override def trigger: PluginTrigger = allRequirements

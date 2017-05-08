@@ -15,7 +15,7 @@ private object SyncTool {
       //if dest not tmpfs yet, link it.
       if (!dest.isActiveLink && !dest.isOfTmpfs) {
         //if link failed, abort sync.
-        if (!LinkTool.linkOne(dest, baseTmpfsDirectory).isDefined) {
+        if (LinkTool.linkOne(dest, baseTmpfsDirectory).isDefined) {
           logger.debug(s"[SbtTmpfsPlugin] link failed, abort sync. Dest path: $dest")
           return
         }
@@ -28,10 +28,12 @@ private object SyncTool {
   def syncByMount(mappingDirs: Map[File, File], mountCmd: String)(implicit logger: Logger): Unit = {
     mappingDirs.filter(check).foreach { case (src, dest) =>
 
+      if(!dest.exists) IO.createDirectory(dest)
+
       //if dest not tmpfs yet, mount it.
       if (!dest.isActiveLink && !dest.isOfTmpfs) {
         //if mounting failed, abort sync.
-        if (!MountTool.mountOne(dest, mountCmd).isDefined) {
+        if (MountTool.mountOne(dest, mountCmd).isDefined) {
           logger.debug(s"[SbtTmpfsPlugin] mount failed, abort sync. Dest path: $dest")
           return
         }
@@ -59,7 +61,9 @@ private object SyncTool {
     true
   }
 
+  //see fileSyncTest/FileSyncTest.md.
   private def sync(src: File, dest: File)(implicit logger: Logger): Unit = {
-    IO.copyDirectory(src, dest)
+    logger.debug(s"[SbtTmpfsPlugin] sync from $src to $dest.")
+    sbt.Process(s"""cp -au ${src.getAbsolutePath}/. ${dest.getAbsolutePath}""").!
   }
 }

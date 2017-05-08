@@ -46,7 +46,7 @@ object RsyncVsSbtCopyTest {
 
 
   def main(args: Array[String]): Unit = {
-    val measures = ramDirs.map { grp =>
+    val measures = ssdDirs.map { grp =>
       args.headOption match {
         case Some("sbt") => syncTestSbt(grp, 10, sbt.IO.copyDirectory(_, _), "sbt")
         case Some("rsync") => syncTestSbt(grp, 10, rsync, "rsync")

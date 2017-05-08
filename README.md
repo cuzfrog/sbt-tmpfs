@@ -39,8 +39,8 @@ Now, enjoy RAM speed!
 #### Directory mode:
 There are 2 strategies to use tmpfs:
 
-* Directly mount the point with tmpfs. (Requires super privilege)
 * Symlink into existing tmpfs dir. (Harder management.)
+* Directly mount the point with tmpfs. (Requires super privilege)
 
 _Symlink_ is the default one, since it does not require super. 
 Default linking dirs include `crossTarget` and `target/resolution-cache`.
@@ -55,18 +55,31 @@ Default mount point is `target`.
 In fact, _Mount_ mode is recommended. It's easier to handle in most cases,
 and not likely to cause some unexpectation.
 
+(currently I haven't figured out how to properly deal with super privilege.
+You need to manually execute task `tmpfsOn` to mount and sync. Help requested..)
+
 You can set `tmpfsDirectoryMode := TmpfsDirectoryMode.Mount` in your build.sbt.
 
+Change mode after the other has been done, will cause some minor inconsistency.
+For example: if `target` has been mounted first, `tmpfsLink` task may have no effect.
+It will realize that dirs inside `target` are all of tmpfs now, so it aborts linking.
+Fortunately, most of the inconsistency will be repaired after a reboot or clean.
+
 #### Work flow:
-sbt-tmpfs hooks task to `compile`, 
-which checks target dirs defined in key `tmpfsLinkDirectories` or `tmpfsMountDirectories`
+sbt-tmpfs checks target dirs defined in key `tmpfsLinkDirectories` or `tmpfsMountDirectories`
  and mounts/links tmpfs when necessary.
  
 Under _Symlink_ mode, when user does a `clean`, symlinks themselves will be purged.
 When new symlinks are created, sbt-tmpfs deletes old dirs in tmpfs that old symlinks referenced.
 
-Task `tmpfsOn`: check and link/mount when needed.
-Task `tmpfsSyncMapping`: sync mapped dirs.
+Task `tmpfsOn`: check and link/mount when needed. 
+Dyn-defined by mode as `tmpfsLink` or `tmpfsMount`.
+
+Task `tmpfsLink`: check and link when needed. runBefore `compile`, triggeredBy `clean`.
+
+Task `tmpfsMount`: check and mount when needed.
+
+Task `tmpfsSyncMapping`: sync mapped dirs, triggered by above.
 
 #### Map and sync dirs:
 Sometimes, we want to speedup some dirs while wanting to preserve them on disk, like `node_modules`,
