@@ -31,10 +31,6 @@ Mount your `/tmp` with tmpfs, by adding this line to your `/etc/fstab` if you ha
     
 Reboot you pc.
 
-Add repository resolver:
-
-    resolvers += Resolver.bintrayRepo("cuzfrog", "maven")
-
 Add below to `project/plugins.sbt`:
 
     addSbtPlugin("com.github.cuzfrog" % "sbt-tmpfs" % "0.1.0")
