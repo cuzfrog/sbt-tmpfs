@@ -14,10 +14,6 @@ cache:
     - $HOME/.ivy2/cache
     - $HOME/.sbt
 
-branches:
-  only:
-  - master
-
 script:
   #- sbt ++$TRAVIS_SCALA_VERSION -Dfile.encoding=UTF8 -J-XX:ReservedCodeCacheSize=256M -J-Xms1024M test
 
