@@ -36,7 +36,7 @@ Add repository resolver:
 
 Add below to `project/plugins.sbt`:
 
-    addSbtPlugin("com.github.cuzfrog" % "sbt-tmpfs" % "0.1.0-SNAPSHOT")
+    addSbtPlugin("com.github.cuzfrog" % "sbt-tmpfs" % "96902f83+20170508-1709")
         
 Now, enjoy RAM speed!
         

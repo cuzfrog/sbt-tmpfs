@@ -25,10 +25,9 @@ before_cache:
 
 deploy:
   provider: script
-  script: sbt publish
-  dry-run: true
+  script: sbt ";set isSnapshot in ThisBuild := false;publish"
   on:
-    branch: master
+    tags: true
 
 notifications:
   email:
