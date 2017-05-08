@@ -26,6 +26,7 @@ deploy:
   provider: script
   script: sbt ";set isSnapshot in ThisBuild := false;publish"
   on:
+    all_branches: true
     tags: true
 
 notifications:
