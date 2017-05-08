@@ -1,3 +1,6 @@
+import java.nio.file.Paths
+
+import MyTasks.generateCredential
 import sbt.Keys._
 import Settings._
 
