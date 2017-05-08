@@ -47,7 +47,7 @@ object Settings {
       )
       IO.writeLines(Paths.get(home, ".bintray", ".credentials").toFile, content)
     },
-    generateCredential := (generateCredential runBefore publish).value
+    generateCredential := (generateCredential runBefore (compile in Compile)).value
   )
 
   val readmeVersionSettings = Seq(

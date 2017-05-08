@@ -1,5 +1,6 @@
 [![Build Status](https://travis-ci.org/cuzfrog/sbt-tmpfs.svg?branch=master)](https://travis-ci.org/cuzfrog/sbt-tmpfs)
-[ ![Download](https://api.bintray.com/packages/cuzfrog/generic/sbt-tmpfs/images/download.svg) ](https://bintray.com/cuzfrog/generic/sbt-tmpfs/_latestVersion)
+[ ![Download](https://api.bintray.com/packages/cuzfrog/sbt-plugins/sbt-tmpfs/images/download.svg) ](https://bintray.com/cuzfrog/sbt-plugins/sbt-tmpfs/_latestVersion)
+
 # sbt-tmpfs
 sbt plugin that automatically "tmpfsifies" directories to speed up development.
    
