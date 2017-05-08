@@ -1,7 +1,7 @@
 package com.github.cuzfrog
 
 import java.io.File
-import java.nio.file.{Files, Path, Paths, StandardOpenOption}
+import java.nio.file.{Files, Path, StandardOpenOption}
 
 import scala.annotation.tailrec
 import scala.util.Random
@@ -15,44 +15,66 @@ import scala.util.Random
   */
 object RsyncVsSbtCopyTest {
 
-  private val testDirs = Seq(
-    TestDirGrp("small", sbt.IO.createTemporaryDirectory, 100, 10, 3),
-    TestDirGrp("medium", sbt.IO.createTemporaryDirectory, 1000, 100, 6),
-    TestDirGrp("big", sbt.IO.createTemporaryDirectory, 10000, 100, 12),
-    TestDirGrp("big2", sbt.IO.createTemporaryDirectory, 1000, 1000, 12)
-  ).map { grp =>
-    FileGen.populateDir(grp.dir.toPath, grp.fileCnt, grp.maxFileSizeInKB, grp.maxDirDepth)
-    grp
+  val originalDirs = Seq(
+    TestDirGrp("small", new File("/tmp/small"), 100, 10, 3),
+    TestDirGrp("medium", new File("/tmp/medium"), 1000, 100, 6),
+    TestDirGrp("big", new File("/tmp/big"), 10000, 100, 12),
+    TestDirGrp("big2", new File("/tmp/big2"), 1000, 1000, 12)
+  ).map(FileGen.populateDir)
+
+  val ramDirs = originalDirs.map { grp =>
+    val dir = new File("/tmp/t1/" + grp.name)
+    if (dir.exists) sbt.IO.delete(dir)
+    sbt.IO.copyDirectory(grp.dir, dir)
+    grp.copy(dir = dir, name = grp.name + "-ram")
+  }
+
+  val ssdDirs = originalDirs.filter(g => !g.name.contains("big")).map { grp =>
+    val dir = new File("/home/cuz/t1/" + grp.name)
+    if (dir.exists) sbt.IO.delete(dir)
+    sbt.IO.copyDirectory(grp.dir, dir)
+    grp.copy(dir = dir, name = grp.name + "-ssd")
   }
 
   private def rsync(src: File, dest: File): Unit = {
     sbt.Process(s"rsync -a ${src.getAbsolutePath}/ ${dest.getAbsolutePath}/").!
   }
 
-  private def cp(src: File, dest: File):Unit = {
+  private def cp(src: File, dest: File): Unit = {
     sbt.Process(s"""cp -au ${src.getAbsolutePath}/. ${dest.getAbsolutePath}""").!
   }
 
 
   def main(args: Array[String]): Unit = {
-    testDirs.foreach { grp =>
-      syncTestSbt(grp, 10, sbt.IO.copyDirectory(_, _), "sbt")
+    val measures = ramDirs.map { grp =>
+      args.headOption match {
+        case Some("sbt") => syncTestSbt(grp, 10, sbt.IO.copyDirectory(_, _), "sbt")
+        case Some("rsync") => syncTestSbt(grp, 10, rsync, "rsync")
+        case Some("cp") => syncTestSbt(grp, 10, cp, "cp")
+        case _ => ???
+      }
     }
-    testDirs.foreach { grp =>
-      syncTestSbt(grp, 10, rsync, "rsync")
+    println("Result:")
+    print(s"| ${args.head} |")
+    measures.foreach { r =>
+      print(s" ${r.totalTimeElapsed}ms |")
     }
-    testDirs.foreach { grp =>
-      syncTestSbt(grp, 10, cp, "cp")
+    println()
+    println("No-modification:")
+    print(s"| ${args.head} |")
+    measures.foreach { r =>
+      print(s" ${r.totalTimeElapsedNoModifi}ms |")
     }
   }
 
+  /** Return (time-cost,time-cost-no-modification) */
   private def syncTestSbt(grp: TestDirGrp, times: Int,
                           testFunc: (File, File) => Unit, functionName: String,
-                          warmTimes: Int = 5) = {
+                          warmTimes: Int = 3): TestResult = {
     val dest = sbt.IO.createTemporaryDirectory
     sbt.IO.copyDirectory(grp.dir, dest)
-    def updateDir() = FileGen.updateDir(grp.dir.toPath, grp.fileCnt / 100, grp.maxFileSizeInKB / 10, grp.fileCnt / 100)
-
+    def updateDir() = FileGen.updateDir(grp.dir.toPath, grp.fileTotalCount / 20, grp.maxFileSizeInKB, grp.fileTotalCount / 20)
+    println("-----------------------------")
     println(s"Test($functionName|${grp.name}) warms up:")
     (1 to warmTimes).foreach { i =>
       updateDir()
@@ -68,33 +90,46 @@ object RsyncVsSbtCopyTest {
       testFunc(grp.dir, dest)
       val time2 = System.currentTimeMillis()
       val timeElapsed = time2 - time1
-      println(s"Round-$i time elapsed: $timeElapsed ms")
+      print(s".$i")
       timeElapsed
     }.sum
-
+    println()
     println(s"Test($functionName|${grp.name}): total rounds:$times, total time elapsed: $totalTimeElapsed ms")
+    println()
+    println(s"Test($functionName|${grp.name}|No modification) begins:")
+    val totalTimeElapsedNoModifi = (1 to times).map { i =>
+      val time1 = System.currentTimeMillis()
+      testFunc(grp.dir, dest)
+      val time2 = System.currentTimeMillis()
+      val timeElapsed = time2 - time1
+      print(s".$i")
+      timeElapsed
+    }.sum
+    println()
+    println(s"Test($functionName|${grp.name}|No modification): total rounds:$times," +
+      s" total time elapsed: $totalTimeElapsedNoModifi ms")
+    sbt.IO.delete(dest)
+
+    TestResult(grp, totalTimeElapsed, totalTimeElapsedNoModifi)
   }
 }
 
-case class TestDirGrp(name: String, dir: File, fileCnt: Int, maxFileSizeInKB: Int, maxDirDepth: Int)
-
-//object CreateTestDirsOnDisk extends App {
-//  val dir = FileGen.populateDir(
-//    dir = sbt.IO.createTemporaryDirectory.toPath,
-//    fileTotalCount = 100,
-//    maxFileSizeInKB = 2,
-//    maxDirDepth = 3)
-//
-//  println(dir)
-//}
+case class TestDirGrp(name: String, dir: File, fileTotalCount: Int, maxFileSizeInKB: Int, maxDirDepth: Int)
+case class TestResult(grp: TestDirGrp, totalTimeElapsed: Long, totalTimeElapsedNoModifi: Long)
 
 private object FileGen {
   /** Given a dir, populate the dir with specified random files and return it. */
-  def populateDir(dir: Path, fileTotalCount: Int, maxFileSizeInKB: Int, maxDirDepth: Int,
-                  ratioPercentage: Int = 50): Path = {
-    require(dir.toFile.isDirectory, "Dir to populate is not a directory.")
+  def populateDir(testDirGrp: TestDirGrp): TestDirGrp = {
+    import testDirGrp._
+    val ratioPercentage: Int = 50
+    if (!dir.exists) sbt.IO.createDirectory(dir)
+    require(dir.isDirectory, "Dir to populate is not a directory.")
     require(fileTotalCount * maxFileSizeInKB <= 1024 * 1024, "Potentially generate too large directory.")
     require(maxDirDepth <= 16, "Too large dir depth.")
+    if (dir.listFiles().nonEmpty) {
+      println("Dir already populated.")
+      return testDirGrp
+    }
 
     @tailrec def ramify(currentLevel: Int, fileCount: Int, parent: Path): Unit = {
       if (fileCount >= fileTotalCount) return
@@ -120,8 +155,8 @@ private object FileGen {
       }
     }
 
-    ramify(1, 0, dir)
-    dir
+    ramify(1, 0, dir.toPath)
+    testDirGrp
   }
 
   def updateDir(dir: Path, fileToAddTotalCount: Int, maxFileSizeInKB: Int, fileToModifyTotalCount: Int): Unit = {
