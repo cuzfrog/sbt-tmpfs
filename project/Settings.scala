@@ -1,3 +1,5 @@
+import java.nio.file.Paths
+
 import sbt.Keys.{version, _}
 import sbt._
 import MyTasks._
@@ -32,7 +34,20 @@ object Settings {
     //publishTo := Some("My Bintray" at s"https://api.bintray.com/maven/cuzfrog/maven/${name.value}/;publish=1"),
     publishMavenStyle := false,
     bintrayRepository := "sbt-plugins",
-    bintrayOrganization in bintray := None
+    bintrayOrganization in bintray := None,
+    generateCredential := {
+      val home = System.getenv("HOME")
+      val bintrayUser = System.getenv("BINTRAY_USER")
+      val bintrayPass = System.getenv("BINTRAY_PASS")
+      val content = Seq(
+        "realm = Bintray API Realm",
+        "host = api.bintray.com",
+        "user = " + bintrayUser,
+        "password = " + bintrayPass
+      )
+      IO.writeLines(Paths.get(home, ".bintray", ".credentials").toFile, content)
+    },
+    generateCredential := (generateCredential runBefore publish).value
   )
 
   val readmeVersionSettings = Seq(
