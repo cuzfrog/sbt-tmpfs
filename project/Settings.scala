@@ -1,6 +1,8 @@
 import sbt.Keys.{version, _}
 import sbt._
 import MyTasks._
+import bintray.BintrayPlugin.autoImport._
+
 
 object Settings {
 
@@ -27,7 +29,10 @@ object Settings {
   )
 
   val publicationSettings = Seq(
-    publishTo := Some("My Bintray" at s"https://api.bintray.com/maven/cuzfrog/maven/${name.value}/;publish=1")
+    //publishTo := Some("My Bintray" at s"https://api.bintray.com/maven/cuzfrog/maven/${name.value}/;publish=1"),
+    publishMavenStyle := false,
+    bintrayRepository := "sbt-plugins",
+    bintrayOrganization in bintray := None
   )
 
   val readmeVersionSettings = Seq(
