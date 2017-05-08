@@ -1,4 +1,4 @@
-import sbt.Keys._
+import sbt.Keys.{version, _}
 import sbt._
 import MyTasks._
 
@@ -34,9 +34,11 @@ object Settings {
     (compile in Compile) := ((compile in Compile) dependsOn versionReadme).value,
     versionReadme := {
       val contents = IO.read(file("README.md"))
-      val regex =raw"""(?<=addSbtPlugin\("com\.github\.cuzfrog" % "${name.value}" % ")[\d\w\-\.]+(?="\))"""
-      val newContents = contents.replaceAll(regex, version.value)
+      val regex =raw"""(?<=addSbtPlugin\("com\.github\.cuzfrog" % "${name.value}" % ")[\+\d\w\-\.]+(?="\))"""
+      val releaseVersion = version.value.split("""\+""").head
+      val newContents = contents.replaceAll(regex, releaseVersion)
       IO.write(file("README.md"), newContents)
+      streams.value.log.info(s"Version set to $releaseVersion")
     }
   )
 }
