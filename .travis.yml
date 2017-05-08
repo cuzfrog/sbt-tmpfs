@@ -1,0 +1,36 @@
+# Use container-based infrastructure
+sudo: false
+
+language: scala
+
+jdk:
+  - oraclejdk8
+
+cache:
+  directories:
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt
+
+branches:
+  only:
+  - master
+
+script:
+  #- sbt ++$TRAVIS_SCALA_VERSION -Dfile.encoding=UTF8 -J-XX:ReservedCodeCacheSize=256M -J-Xms1024M test
+
+  # Tricks to avoid unnecessary cache updates
+  - find $HOME/.sbt -name "*.lock" | xargs rm
+  - find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm
+
+deploy:
+  provider: script
+  script: sbt publish
+  dry-run: true
+  on:
+    branch: master
+
+notifications:
+  email:
+    recipients:
+      - cuzfrog@139.com
+  on_success: always # default: change

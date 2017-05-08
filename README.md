@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/cuzfrog/sbt-tmpfs.svg?branch=master)](https://travis-ci.org/cuzfrog/sbt-tmpfs)
+[ ![Download](https://api.bintray.com/packages/cuzfrog/maven/sbt-tmpfs/images/download.svg) ](https://bintray.com/cuzfrog/maven/sbt-tmpfs/_latestVersion)
 # sbt-tmpfs
 sbt plugin that automatically "tmpfsifies" directories to speed up development.
    
@@ -27,6 +29,10 @@ Mount your `/tmp` with tmpfs, by adding this line to your `/etc/fstab` if you ha
     tmpfs /tmp tmpfs rw,nosuid,nodev,noatime
     
 Reboot you pc.
+
+Add repository resolver:
+
+    resolvers += Resolver.bintrayRepo("cuzfrog", "maven")
 
 Add below to `project/plugins.sbt`:
 
@@ -93,7 +99,8 @@ sbt-tmpfs will link/mount `destDir` with tmpfs,
 if they are not an active symlink or already of tmpfs,
 and automatically does one-way-synchronization: from source to destination.
 
-There is a [Interesting test about choosing which method to do the sync](fileSyncTest/FileSyncTest.md).
+There is a Interesting [Test: sbt.IO-vs-rsync-vs-cp](fileSyncTest/FileSyncTest.md)
+ about choosing which method to do the sync.
 
 ## About
 

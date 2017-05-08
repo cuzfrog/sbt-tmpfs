@@ -5,9 +5,7 @@ import MyTasks._
 object Settings {
 
   val commonSettings = Seq(
-    resolvers ++= Seq(
-      Resolver.bintrayRepo("cuzfrog", "maven")
-    ),
+    resolvers += Resolver.bintrayRepo("cuzfrog", "maven"),
     organization := "com.github.cuzfrog",
     scalacOptions ++= Seq(
       //"-Xlint",
