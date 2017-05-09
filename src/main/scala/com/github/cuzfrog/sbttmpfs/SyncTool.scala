@@ -9,8 +9,9 @@ import sbt._
   * Created by cuz on 17-5-7.
   */
 private object SyncTool {
-  def syncByLink(mappingDirs: Map[File, File], baseTmpfsDirectory: File)(implicit logger: Logger): Unit = {
-    mappingDirs.filter(check).foreach { case (src, dest) =>
+  def syncByLink(mappingDirs: Map[File, Seq[File]], baseTmpfsDirectory: File)(implicit logger: Logger): Unit = {
+    mappingDirs.toSeq.flatMap { case (src, dests) => dests.map(src -> _) }
+      .filter(check).foreach { case (src, dest) =>
 
       //if dest not tmpfs yet, link it.
       if (!dest.isActiveLink && !dest.isOfTmpfs) {
@@ -25,10 +26,11 @@ private object SyncTool {
     }
   }
 
-  def syncByMount(mappingDirs: Map[File, File], mountCmd: String)(implicit logger: Logger): Unit = {
-    mappingDirs.filter(check).foreach { case (src, dest) =>
+  def syncByMount(mappingDirs: Map[File, Seq[File]], mountCmd: String)(implicit logger: Logger): Unit = {
+    mappingDirs.toSeq.flatMap { case (src, dests) => dests.map(src -> _) }
+      .filter(check).foreach { case (src, dest) =>
 
-      if(!dest.exists) IO.createDirectory(dest)
+      if (!dest.exists) IO.createDirectory(dest)
 
       //if dest not tmpfs yet, mount it.
       if (!dest.isActiveLink && !dest.isOfTmpfs) {

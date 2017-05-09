@@ -19,7 +19,7 @@ object SbtTmpfsPlugin extends AutoPlugin {
     val tmpfsDirectoryMode =
       settingKey[TmpfsDirectoryMode]("Control mount target or link dir within target. Default: Symlink")
     val tmpfsMappingDirectories =
-      settingKey[Map[sbt.File, sbt.File]](
+      settingKey[Map[File, Seq[File]]](
         """|Keys are source directories that will be synchronized to tmpfs.
            |Values are destination dirs where keys are synchronized to.
            |  If destination dir is within tmpfs or is an active symlink, then only do the sync.
@@ -93,8 +93,6 @@ object SbtTmpfsPlugin extends AutoPlugin {
       }
     }.value
   )
-
-  private val tmpfsLinkChain = taskKey[Unit]("")
 
   private val taskDependentRelationships = Seq(
     tmpfsLink := (tmpfsLink runBefore compile.in(Compile)).value,
