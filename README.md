@@ -3,6 +3,8 @@
 
 # sbt-tmpfs
 sbt plugin that automatically "tmpfsifies" directories to speed up development.
+
+There are known [issues](https://github.com/cuzfrog/sbt-tmpfs/issues), feel free to fire issues.
    
 ## Why tmpfs?
 
