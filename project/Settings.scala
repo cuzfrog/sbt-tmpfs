@@ -27,7 +27,12 @@ object Settings {
     logBuffered in Test := false,
     testOptions += Tests.Argument(TestFrameworks.JUnit, "-v", "-q", "-a"),
     parallelExecution in Test := false,
-    licenses += ("Apache-2.0", url("https://opensource.org/licenses/Apache-2.0"))
+    licenses += ("Apache-2.0", url("https://opensource.org/licenses/Apache-2.0")),
+    cleanSnapshot := {
+      val home = System.getenv("HOME")
+      IO.delete(new File(home) / ".ivy2/local/com.github.cuzfrog/sbt-tmpfs")
+    },
+    cleanSnapshot := (cleanSnapshot runBefore publishLocal).value
   )
 
   val publicationSettings = Seq(

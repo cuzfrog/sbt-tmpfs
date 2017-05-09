@@ -52,7 +52,7 @@ object SbtTmpfsPlugin extends AutoPlugin {
       tmpfsMountSizeLimit := 256,
       tmpfsMountCommand := s"sudo mount -t tmpfs -o size=${tmpfsMountSizeLimit.value}m tmpfs",
       tmpfsMappingDirectories := Map.empty,
-      cleanKeepFiles ++= tmpfsMappingDirectories.value.values.toSeq
+      cleanKeepFiles ++= tmpfsMappingDirectories.value.values.toSeq.flatten
     )
   }
 
@@ -95,7 +95,7 @@ object SbtTmpfsPlugin extends AutoPlugin {
   )
 
   private val taskDependentRelationships = Seq(
-    tmpfsLink := (tmpfsLink runBefore compile.in(Compile)).value,
+    tmpfsLink := (tmpfsLink runBefore update).value,
     tmpfsLink := (tmpfsLink triggeredBy clean).value,
     tmpfsSyncMapping := (tmpfsSyncMapping triggeredBy(tmpfsOn, tmpfsLink, tmpfsMount)).value
   )

@@ -48,3 +48,5 @@ project/target
 #SHITTY output not in target directory
 build.log
 /bin/
+
+testproject/preservedOutside

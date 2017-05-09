@@ -6,4 +6,5 @@ object MyTasks {
   val cleanAll: TaskKey[Unit] = TaskKey[Unit]("clean-all", "Clean all files in target folders.")
   val versionReadme: TaskKey[Unit] = TaskKey[Unit]("version-readme", "Update version in README.MD")
   val generateCredential: TaskKey[Unit] = taskKey[Unit]("Generate credentials.")
+  val cleanSnapshot: TaskKey[Unit] = taskKey[Unit]("Clean snapshot in ivy cache.")
 }

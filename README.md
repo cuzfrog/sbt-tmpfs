@@ -37,7 +37,7 @@ Reboot you pc.
 
 Add below to `project/plugins.sbt`:
 
-    addSbtPlugin("com.github.cuzfrog" % "sbt-tmpfs" % "0.1.0")
+    addSbtPlugin("com.github.cuzfrog" % "sbt-tmpfs" % "0.2.0-SNAPSHOT")
         
 Now, enjoy RAM speed!
         
@@ -88,7 +88,7 @@ When new symlinks are created, sbt-tmpfs deletes old dirs in tmpfs that old syml
 Task `tmpfsOn`: check and link/mount when needed. 
 Dyn-defined by mode as `tmpfsLink` or `tmpfsMount`.
 
-Task `tmpfsLink`: check and link when needed. runBefore `compile`, triggeredBy `clean`.
+Task `tmpfsLink`: check and link when needed. runBefore `update`, triggeredBy `clean`.
 
 Task `tmpfsMount`: check and mount when needed.
 
