@@ -15,7 +15,7 @@ Comparison with common specs:
 | sas-hdd  | fast in raid  | 20+ ms | 15 w | 
 
 RAM is thousands of times faster than SSD. Tmpfs provides an easy way to leverage RAM.
-More, RAM is immune to the exertion brought by infinite compilation/clean cycles.
+More, **RAM is immune to the exertion brought by infinite compilation/clean cycles.**
 While SSD is tolerant, developers are not.
 [Latency Numbers Every Programmer Should Know](https://gist.github.com/jboner/2841832)
 
@@ -24,6 +24,8 @@ While SSD is tolerant, developers are not.
 sbt-tmpfs brings automation to leverage tmpfs to speedup your development.
 
 ## How to use:
+
+##### Note: due to [#1444](https://github.com/sbt/sbt/issues/1444), make sure sbt >= 0.13.14
 
 Mount your `/tmp` with tmpfs, by adding this line to your `/etc/fstab` if you haven't yet:
 
@@ -39,22 +41,28 @@ Now, enjoy RAM speed!
         
 ## Detail and Configuration:
 
-#### Directory mode:
+### Directory mode:
 There are 2 strategies to use tmpfs:
 
 * Symlink into existing tmpfs dir. (Harder management.)
 * Directly mount the point with tmpfs. (Requires super privilege)
 
-_Symlink_ is the default one, since it does not require super. 
-Default linking dirs include `crossTarget` and `target/resolution-cache`.
+**Symlink** is the default one, since it does not require super. 
+Default linking dirs include `crossTarget` and `target/resolution-cache`. Add more dirs to be linked:
+
+    tmpfsLinkDirectories ++= Seq(//your dirs here.)
+
 Broken symlink will be overwrite by sbt-tmpfs.
 (Symlink of some dir like `streams` may lead to sbt error when symlink is broken after a reboot.)
 The base tmpfs dir where symlinks point to, by default, is `/tmp`, 
 which is controlled by `tmpfsLinkBaseDirectory`.
 
-When _Mount_ mode is in use, sbt command line may require super password to execute shell command.
+When **Mount** mode is in use, sbt command line may require super password to execute shell command.
 Mount size limit key:`tmpfsMountSizeLimit` , shell command can also be changed by `tmpfsMountCommand`.
-Default mount point is `target`.
+Default mount point is `target`. Add more dirs to be mounted:
+
+    tmpfsMountDirectories ++= Seq(//your dirs here.)
+
 In fact, _Mount_ mode is recommended. It's easier to handle in most cases,
 and not likely to cause some unexpectation.
 
@@ -63,12 +71,12 @@ You need to manually execute task `tmpfsOn` to mount and sync. Help requested..)
 
 You can set `tmpfsDirectoryMode := TmpfsDirectoryMode.Mount` in your build.sbt.
 
-Change mode after the other has been done, will cause some minor inconsistency.
+Changing mode after the other has been done, will cause some minor inconsistency.
 For example: if `target` has been mounted first, `tmpfsLink` task may have no effect.
 It will realize that dirs inside `target` are all of tmpfs now, so it aborts linking.
 Fortunately, most of the inconsistency will be repaired after a reboot or clean.
 
-#### Work flow:
+### Work flow:
 sbt-tmpfs checks target dirs defined in key `tmpfsLinkDirectories` or `tmpfsMountDirectories`
  and mounts/links tmpfs when necessary.
  
@@ -84,7 +92,7 @@ Task `tmpfsMount`: check and mount when needed.
 
 Task `tmpfsSyncMapping`: sync mapped dirs, triggered by above.
 
-#### Map and sync dirs:
+### Map and sync dirs:
 Sometimes, we want to speedup some dirs while wanting to preserve them on disk, like `node_modules`,
 we can map these dirs.
 
@@ -96,8 +104,19 @@ sbt-tmpfs will link/mount `destDir` with tmpfs,
 if they are not an active symlink or already of tmpfs,
 and automatically does one-way-synchronization: from source to destination.
 
-There is a Interesting [Test: sbt.IO-vs-rsync-vs-cp](fileSyncTest/FileSyncTest.md)
+There is an Interesting [Test: sbt.IO-vs-rsync-vs-cp](fileSyncTest/FileSyncTest.md)
  about choosing which method to do the sync.
+ 
+`destDir`s have been added to `cleanKeepFiles` by sbt-tmpfs automatically.
+(But this seems not working? Help requested..)
+
+### Debug info:
+sbt-tmpfs has thorough debug log. Set log level to debug to tasks respectively:
+
+   logLevel in tmpfsOn := Level.Debug
+   logLevel in tmpfsLink := Level.Debug
+   logLevel in tmpfsMount := Level.Debug
+   logLevel in tmpfsSyncMapping := Level.Debug
 
 ## About
 
