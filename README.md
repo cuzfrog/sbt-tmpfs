@@ -99,7 +99,7 @@ Sometimes, we want to speedup some dirs while wanting to preserve them on disk, 
 we can map these dirs.
 
     tmpfsMappingDirectories := Map(
-      sourceDir -> destDir //sourceDir is somewhere on disk.
+      sourceDir -> Seq(destDir) //sourceDir is somewhere on disk.
     )
     
 sbt-tmpfs will link/mount `destDir` with tmpfs,
