@@ -15,3 +15,5 @@ lazy val root = (project in file("."))
     ),
     reColors := Seq("magenta")
   )
+
+addCompilerPlugin("org.psywerx.hairyfotr" %% "linter" % "0.1.17")
