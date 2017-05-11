@@ -37,9 +37,11 @@ Reboot you pc.
 
 Add below to `project/plugins.sbt`:
 
-    addSbtPlugin("com.github.cuzfrog" % "sbt-tmpfs" % "0.2.0")
+    addSbtPlugin("com.github.cuzfrog" % "sbt-tmpfs" % "0.2.1")
         
 Now, enjoy RAM speed!
+
+(If you use sbt-revolver `reStart`, run `compile` to trigger sbt-tmpfs first.)
         
 ## Detail and Configuration:
 
@@ -79,6 +81,7 @@ It will realize that dirs inside `target` are all of tmpfs now, so it aborts lin
 Fortunately, most of the inconsistency will be repaired after a reboot or clean.
 
 ### Work flow:
+
 sbt-tmpfs checks target dirs defined in key `tmpfsLinkDirectories` or `tmpfsMountDirectories`
  and mounts/links tmpfs when necessary.
  
@@ -93,6 +96,8 @@ Task `tmpfsLink`: check and link when needed. runBefore `update`, triggeredBy `c
 Task `tmpfsMount`: check and mount when needed.
 
 Task `tmpfsSyncMapping`: sync mapped dirs, triggered by above.
+
+On initializing, sbt-tmpfs will try to clean dead(broken) symlinks, possibly created last time.
 
 ### Map and sync dirs:
 Sometimes, we want to speedup some dirs while wanting to preserve them on disk, like `node_modules`,

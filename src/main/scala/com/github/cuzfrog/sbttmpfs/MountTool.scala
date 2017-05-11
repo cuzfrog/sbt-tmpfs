@@ -3,7 +3,6 @@ package com.github.cuzfrog.sbttmpfs
 import java.io.File
 
 import ExMethod._
-import com.sun.prism.impl.Disposer.Target
 import sbt._
 
 private object MountTool {

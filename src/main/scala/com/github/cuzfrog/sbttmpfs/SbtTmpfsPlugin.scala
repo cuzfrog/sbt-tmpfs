@@ -29,6 +29,7 @@ object SbtTmpfsPlugin extends AutoPlugin {
       )
     val tmpfsSyncMapping =
       taskKey[Unit]("Synchronize dirs defined in tmpfsMappingDirectories.")
+    //val tmpfsCleanDeadLinks = taskKey[Unit]("Try to clean dead links.")
 
     // --------- link -------- keys --------
     val tmpfsLinkDirectories =
@@ -91,7 +92,15 @@ object SbtTmpfsPlugin extends AutoPlugin {
         case TmpfsDirectoryMode.Symlink => tmpfsLink
         case TmpfsDirectoryMode.Mount => tmpfsMount
       }
-    }.value
+    }.value,
+    (initialize in Compile) := {
+      implicit val logger = sLog.value
+      logger.debug("[SbtTmpfsPlugin] try to clean dead symlinks.")
+      LinkTool.cleanDeadLinks(target.value.listFiles()) //clean possible different cross version.
+      LinkTool.cleanDeadLinks(tmpfsLinkDirectories.value)
+      LinkTool.cleanDeadLinks(tmpfsMappingDirectories.value.values.flatten.toSeq)
+      (initialize in Compile).value
+    }
   )
 
   private val taskDependentRelationships = Seq(

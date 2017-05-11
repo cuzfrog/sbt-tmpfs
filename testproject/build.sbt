@@ -4,6 +4,7 @@ logLevel in tmpfsLink := Level.Debug
 logLevel in tmpfsMount := Level.Debug
 logLevel in tmpfsOn := Level.Debug
 logLevel in tmpfsSyncMapping := Level.Debug
+logLevel in tmpfsCleanDeadLinks := Level.Debug
 logLevel in compile := Level.Info
 logLevel in initialize := Level.Debug
 

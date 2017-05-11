@@ -5,11 +5,11 @@ shellPrompt in ThisBuild := { state => Project.extract(state).currentRef.project
 sbtPlugin := true
 
 lazy val root = (project in file("."))
-  .settings(commonSettings, publicationSettings, readmeVersionSettings)
+  .settings(commonSettings, publicationSettings)
   .settings(
     name := "sbt-tmpfs",
     description := "sbt plugin to speed up development by leveraging tmpfs.",
-    //version := "0.2.0-SNAPSHOT",
+    //version := "0.2.1-SNAPSHOT",
     libraryDependencies ++= Seq(
 
     ),

@@ -81,4 +81,14 @@ private object LinkTool {
       ""
     }
   }
+
+  def cleanDeadLinks(links: Seq[File])(implicit logger: Logger): Unit = {
+    if(links == null) return
+    links.foreach { syml =>
+      if (syml.isLink && !syml.isActiveLink) {
+        IO.delete(syml)
+        logger.debug(s"[SbtTmpfsPlugin] $syml is a dead link. deleted.")
+      }
+    }
+  }
 }

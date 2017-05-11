@@ -10,13 +10,7 @@ import sbt.{IO, Logger, Process}
   */
 private object ExMethod {
   implicit class ExFile(f: File)(implicit logger: Logger) {
-    def isLink: Boolean = {
-      if (!f.exists) {
-        logger.debug(s"[SbtTmpfsPlugin] check if ${f.getAbsolutePath} is a link, while the file does not exist.")
-        return false
-      }
-      Files.isSymbolicLink(f.toPath)
-    }
+    def isLink: Boolean = Files.isSymbolicLink(f.toPath)
 
     def isOfTmpfs: Boolean = {
       if (!f.exists) {
