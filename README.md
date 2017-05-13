@@ -120,10 +120,10 @@ There is an Interesting [Test: sbt.IO-vs-rsync-vs-cp](fileSyncTest/FileSyncTest.
 ### Debug info:
 sbt-tmpfs has thorough debug log. Set log level to debug to tasks respectively:
 
-   logLevel in tmpfsOn := Level.Debug
-   logLevel in tmpfsLink := Level.Debug
-   logLevel in tmpfsMount := Level.Debug
-   logLevel in tmpfsSyncMapping := Level.Debug
+    logLevel in tmpfsOn := Level.Debug
+    logLevel in tmpfsLink := Level.Debug
+    logLevel in tmpfsMount := Level.Debug
+    logLevel in tmpfsSyncMapping := Level.Debug
 
 ## About
 
