@@ -75,6 +75,7 @@ You can set below in your build.sbt.
     tmpfsDirectoryMode := TmpfsDirectoryMode.Mount
     onLoad in Global := (onLoad in Global).value andThen (Command.process(s";project1/tmpfsOn;project2/tmpfsOn", _))
 
+------------------
 Changing mode after the other has been done, will cause some minor inconsistency.
 For example: if `target` has been mounted first, `tmpfsLink` task may have no effect.
 It will realize that dirs inside `target` are all of tmpfs now, so it aborts linking.
@@ -118,7 +119,7 @@ There is an Interesting [Test: sbt.IO-vs-rsync-vs-cp](fileSyncTest/FileSyncTest.
 (But this seems not working? Help requested..)
 
 ### Debug info:
-sbt-tmpfs has thorough debug log. Set log level to debug to tasks respectively:
+sbt-tmpfs has thorough debug log. Set log level to debug in tasks respectively:
 
     logLevel in tmpfsOn := Level.Debug
     logLevel in tmpfsLink := Level.Debug
