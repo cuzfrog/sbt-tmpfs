@@ -70,10 +70,10 @@ Default mount point is `target`. Add more dirs to be mounted:
 In fact, _Mount_ mode is recommended. It's easier to handle in most cases,
 and not likely to cause some unexpectation.
 
-(currently I haven't figured out how to properly deal with super privilege.
-You need to manually execute task `tmpfsOn` to mount and sync. Help requested..)
+You can set below in your build.sbt.
 
-You can set `tmpfsDirectoryMode := TmpfsDirectoryMode.Mount` in your build.sbt.
+    tmpfsDirectoryMode := TmpfsDirectoryMode.Mount
+    onLoad in Global := (onLoad in Global).value andThen (Command.process(s";project1/tmpfsOn;project2/tmpfsOn", _))
 
 Changing mode after the other has been done, will cause some minor inconsistency.
 For example: if `target` has been mounted first, `tmpfsLink` task may have no effect.
