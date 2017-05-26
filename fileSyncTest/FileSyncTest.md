@@ -1,4 +1,4 @@
-# rsync vs sbt.IO 
+# rsync vs cp vs sbt.IO 
 ## Local file synchronization performance test.
 
 I want to do some one-way sync: cp file from source to destination.
