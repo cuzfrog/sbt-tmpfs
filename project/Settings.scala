@@ -37,6 +37,7 @@ object Settings {
 
   val publicationSettings = Seq(
     //publishTo := Some("My Bintray" at s"https://api.bintray.com/maven/cuzfrog/maven/${name.value}/;publish=1"),
+    //(compile in Compile) := ((compile in Compile) dependsOn generateCredential).value,
     publishMavenStyle := false,
     bintrayRepository := "sbt-plugins",
     bintrayOrganization in bintray := None,

@@ -5,6 +5,7 @@ language: scala
 
 scala:
    - 2.10.6
+   - 2.12.3
 
 jdk:
   - oraclejdk8
