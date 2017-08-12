@@ -4,7 +4,6 @@ logLevel in tmpfsLink := Level.Debug
 logLevel in tmpfsMount := Level.Debug
 logLevel in tmpfsOn := Level.Debug
 logLevel in tmpfsSyncMapping := Level.Debug
-logLevel in tmpfsCleanDeadLinks := Level.Debug
 logLevel in compile := Level.Info
 logLevel in initialize := Level.Debug
 
@@ -14,7 +13,7 @@ scalaVersion in ThisBuild := "2.12.2"
 lazy val testproject = (project in file("."))
   .settings(commonSettings)
   .settings(
-    tmpfsDirectoryMode := TmpfsDirectoryMode.Symlink,
+    tmpfsDirectoryMode := TmpfsDirectoryMode.Mount,
     tmpfsMountSizeLimit := 255,
     tmpfsMappingDirectories := Map(
       baseDirectory.value / "preservedSource" -> Seq(

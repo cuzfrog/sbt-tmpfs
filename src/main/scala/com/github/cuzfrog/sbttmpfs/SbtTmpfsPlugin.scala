@@ -55,27 +55,30 @@ object SbtTmpfsPlugin extends AutoPlugin {
       tmpfsMountSizeLimit := 256,
       tmpfsMountCommand := s"sudo mount -t tmpfs -o size=${tmpfsMountSizeLimit.value}m tmpfs",
       tmpfsMappingDirectories := Map.empty,
-      cleanKeepFiles ++= tmpfsMappingDirectories.value.values.toSeq.flatten
+      cleanKeepFiles ++= {
+        val mappingDirs = tmpfsMappingDirectories.value.values.toSeq.flatten
+        mappingDirs.filter(_.absolutePath.startsWith(target.value.absolutePath)) //under target
+      }
     )
   }
 
   import autoImport._
 
   private val taskDefinition = Seq(
-    tmpfsLink := {
+    tmpfsLink := Def.taskDyn {
       implicit val logger: ManagedLogger = streams.value.log
       val mode = tmpfsDirectoryMode.value
       if (mode == TmpfsDirectoryMode.Symlink) {
-        LinkTool.link(tmpfsLinkDirectories.value, tmpfsLinkBaseDirectory.value)
-      } else logger.debug(s"[SbtTmpfsPlugin] call tmpfsLink, but mode is: $mode, abort.")
-    },
-    tmpfsMount := {
+        Def.task(LinkTool.link(tmpfsLinkDirectories.value, tmpfsLinkBaseDirectory.value))
+      } else Def.task(logger.debug(s"[SbtTmpfsPlugin] call tmpfsLink, but mode is: $mode, abort."))
+    }.value,
+    tmpfsMount := Def.taskDyn {
       implicit val logger: ManagedLogger = streams.value.log
       val mode = tmpfsDirectoryMode.value
       if (mode == TmpfsDirectoryMode.Mount) {
-        MountTool.mount(tmpfsMountDirectories.value, tmpfsMountCommand.value)
-      } else logger.debug(s"[SbtTmpfsPlugin] call tmpfsMount, but mode is: $mode abort.")
-    },
+        Def.task(MountTool.mount(tmpfsMountDirectories.value, tmpfsMountCommand.value))
+      } else Def.task(logger.debug(s"[SbtTmpfsPlugin] call tmpfsMount, but mode is: $mode abort."))
+    }.value,
     tmpfsSyncMapping := Def.taskDyn {
       implicit val logger: ManagedLogger = streams.value.log
       val mode = tmpfsDirectoryMode.value

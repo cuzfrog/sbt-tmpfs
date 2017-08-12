@@ -3,8 +3,6 @@
 
 # sbt-tmpfs
 sbt plugin that automatically "tmpfsifies" directories to speed up development.
-
-There are known [issues](https://github.com/cuzfrog/sbt-tmpfs/issues), feel free to fire issues.
    
 ## Why tmpfs?
 
@@ -37,7 +35,7 @@ Reboot you pc.
 
 Add below to `project/plugins.sbt`:
 
-    addSbtPlugin("com.github.cuzfrog" % "sbt-tmpfs" % "0.2.1")
+    addSbtPlugin("com.github.cuzfrog" % "sbt-tmpfs" % "0.3.0") //for sbt 1.0
         
 Now, enjoy RAM speed!
 
@@ -116,7 +114,6 @@ There is an Interesting [Test: sbt.IO-vs-rsync-vs-cp](fileSyncTest/FileSyncTest.
  about choosing which method to do the sync.
  
 `destDir`s have been added to `cleanKeepFiles` by sbt-tmpfs automatically.
-(But this seems not working? Help requested..)
 
 ### Debug info:
 sbt-tmpfs has thorough debug log. Set log level to debug in tasks respectively:

@@ -4,6 +4,7 @@ import java.io.File
 import java.nio.file.{Files, Path, StandardOpenOption}
 
 import scala.annotation.tailrec
+import scala.sys.process.Process
 import scala.util.Random
 
 /**
@@ -37,11 +38,11 @@ object RsyncVsSbtCopyTest {
   }
 
   private def rsync(src: File, dest: File): Unit = {
-    sbt.Process(s"rsync -a ${src.getAbsolutePath}/ ${dest.getAbsolutePath}/").!
+    Process(s"rsync -a ${src.getAbsolutePath}/ ${dest.getAbsolutePath}/").!
   }
 
   private def cp(src: File, dest: File): Unit = {
-    sbt.Process(s"""cp -au ${src.getAbsolutePath}/. ${dest.getAbsolutePath}""").!
+    Process(s"""cp -au ${src.getAbsolutePath}/. ${dest.getAbsolutePath}""").!
   }
 
 
