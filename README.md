@@ -4,7 +4,7 @@
 # sbt-tmpfs
 sbt plugin that automatically "tmpfsifies" directories to speed up development.
 
-sbt 1.0.0.  For those of you who have trouble downloading `doc` and `src` through IDEA,  use `updateClassifiers` in console.
+sbt 1.0.0.  For those of you who have trouble downloading `doc` and `src` through IDEA,  use `reload plugins` then `updateClassifiers` in console.
 
 ## Why tmpfs?
 
