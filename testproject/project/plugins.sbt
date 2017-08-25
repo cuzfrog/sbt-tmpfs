@@ -1,1 +1,1 @@
-addSbtPlugin("com.github.cuzfrog" % "sbt-tmpfs" % "0.3.0-SNAPSHOT")
+addSbtPlugin("com.github.cuzfrog" % "sbt-tmpfs" % "0.3.0+4-646ce9e5+20170825-2308")

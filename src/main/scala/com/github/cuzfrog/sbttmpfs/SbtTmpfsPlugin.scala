@@ -67,28 +67,37 @@ object SbtTmpfsPlugin extends AutoPlugin {
   private val taskDefinition = Seq(
     tmpfsLink := Def.taskDyn {
       implicit val logger: ManagedLogger = streams.value.log
-      val mode = tmpfsDirectoryMode.value
-      if (mode == TmpfsDirectoryMode.Symlink) {
-        Def.task(LinkTool.link(tmpfsLinkDirectories.value, tmpfsLinkBaseDirectory.value))
-      } else Def.task(logger.debug(s"[SbtTmpfsPlugin] call tmpfsLink, but mode is: $mode, abort."))
+      if (isCi) Def.task(logger.debug("CI environment, abort linking."))
+      else {
+        val mode = tmpfsDirectoryMode.value
+        if (mode == TmpfsDirectoryMode.Symlink) {
+          Def.task(LinkTool.link(tmpfsLinkDirectories.value, tmpfsLinkBaseDirectory.value))
+        } else Def.task(logger.debug(s"[SbtTmpfsPlugin] call tmpfsLink, but mode is: $mode, abort."))
+      }
     }.value,
     tmpfsMount := Def.taskDyn {
       implicit val logger: ManagedLogger = streams.value.log
-      val mode = tmpfsDirectoryMode.value
-      if (mode == TmpfsDirectoryMode.Mount) {
-        Def.task(MountTool.mount(tmpfsMountDirectories.value, tmpfsMountCommand.value))
-      } else Def.task(logger.debug(s"[SbtTmpfsPlugin] call tmpfsMount, but mode is: $mode abort."))
+      if (isCi) Def.task(logger.debug("CI environment, abort mounting."))
+      else {
+        val mode = tmpfsDirectoryMode.value
+        if (mode == TmpfsDirectoryMode.Mount) {
+          Def.task(MountTool.mount(tmpfsMountDirectories.value, tmpfsMountCommand.value))
+        } else Def.task(logger.debug(s"[SbtTmpfsPlugin] call tmpfsMount, but mode is: $mode abort."))
+      }
     }.value,
     tmpfsSyncMapping := Def.taskDyn {
       implicit val logger: ManagedLogger = streams.value.log
-      val mode = tmpfsDirectoryMode.value
-      logger.debug(s"[SbtTmpfsPlugin] sync mapping with mode: $mode")
-      mode match {
-        case TmpfsDirectoryMode.Symlink => Def.task {
-          SyncTool.syncByLink(tmpfsMappingDirectories.value, tmpfsLinkBaseDirectory.value)
-        }
-        case TmpfsDirectoryMode.Mount => Def.task {
-          SyncTool.syncByMount(tmpfsMappingDirectories.value, tmpfsMountCommand.value)
+      if (isCi) Def.task(logger.debug("CI environment, abort sync."))
+      else {
+        val mode = tmpfsDirectoryMode.value
+        logger.debug(s"[SbtTmpfsPlugin] sync mapping with mode: $mode")
+        mode match {
+          case TmpfsDirectoryMode.Symlink => Def.task {
+            SyncTool.syncByLink(tmpfsMappingDirectories.value, tmpfsLinkBaseDirectory.value)
+          }
+          case TmpfsDirectoryMode.Mount => Def.task {
+            SyncTool.syncByMount(tmpfsMappingDirectories.value, tmpfsMountCommand.value)
+          }
         }
       }
     }.value,
@@ -117,4 +126,6 @@ object SbtTmpfsPlugin extends AutoPlugin {
   override def trigger: PluginTrigger = allRequirements
   override val projectSettings: Seq[Def.Setting[_]] =
     defaultSbtTmpfsSettings ++ taskDefinition ++ taskDependentRelationships
+
+  private def isCi: Boolean = sys.env.contains("CI")
 }
