@@ -68,6 +68,6 @@ private object SyncTool {
   //see fileSyncTest/FileSyncTest.md.
   private def sync(src: File, dest: File)(implicit logger: Logger): Unit = {
     logger.debug(s"[SbtTmpfsPlugin] sync from $src to $dest.")
-    Process(s"""cp -au ${src.getAbsolutePath}/. ${dest.getAbsolutePath}""").!
+    Process(s"""cp -au --no-preserve=timestamps ${src.getAbsolutePath}/. ${dest.getAbsolutePath}""").!
   }
 }
