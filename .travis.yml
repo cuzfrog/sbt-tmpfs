@@ -14,9 +14,6 @@ cache:
     - $HOME/.ivy2/cache
     - $HOME/.sbt
 
-script:
-  #- sbt ++$TRAVIS_SCALA_VERSION -Dfile.encoding=UTF8 -J-XX:ReservedCodeCacheSize=256M -J-Xms1024M test
-
 before_cache:
   # Cleanup the cached directories to avoid unnecessary cache updates
   - find $HOME/.ivy2/cache -name "ivydata-*.properties" -print -delete > /dev/null
