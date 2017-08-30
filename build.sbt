@@ -3,6 +3,7 @@ import Settings._
 
 shellPrompt in ThisBuild := { state => Project.extract(state).currentRef.project + "> " }
 sbtPlugin := true
+crossSbtVersions := Vector("0.13.16", "1.0.0")
 
 lazy val root = (project in file("."))
   .settings(commonSettings ++ publicationSettings: _*)
@@ -10,7 +11,6 @@ lazy val root = (project in file("."))
     name := "sbt-tmpfs",
     description := "sbt plugin to speed up development by leveraging tmpfs.",
     //version := "0.3.0-SNAPSHOT",
-    //CrossBuilding.crossSbtVersions := List("0.13", "1.0"),
     libraryDependencies ++= Seq(
 
     )

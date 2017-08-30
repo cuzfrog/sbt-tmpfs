@@ -2,7 +2,6 @@ package com.github.cuzfrog.sbttmpfs
 
 import sbt.{Def, _}
 import Keys._
-import sbt.internal.util.ManagedLogger
 
 object SbtTmpfsPlugin extends AutoPlugin {
 
@@ -66,7 +65,7 @@ object SbtTmpfsPlugin extends AutoPlugin {
 
   private val taskDefinition = Seq(
     tmpfsLink := Def.taskDyn {
-      implicit val logger: ManagedLogger = streams.value.log
+      implicit val logger = streams.value.log
       if (isCi) Def.task(logger.debug("CI environment, abort linking."))
       else {
         val mode = tmpfsDirectoryMode.value
@@ -76,7 +75,7 @@ object SbtTmpfsPlugin extends AutoPlugin {
       }
     }.value,
     tmpfsMount := Def.taskDyn {
-      implicit val logger: ManagedLogger = streams.value.log
+      implicit val logger = streams.value.log
       if (isCi) Def.task(logger.debug("CI environment, abort mounting."))
       else {
         val mode = tmpfsDirectoryMode.value
@@ -86,7 +85,7 @@ object SbtTmpfsPlugin extends AutoPlugin {
       }
     }.value,
     tmpfsSyncMapping := Def.taskDyn {
-      implicit val logger: ManagedLogger = streams.value.log
+      implicit val logger = streams.value.log
       if (isCi) Def.task(logger.debug("CI environment, abort sync."))
       else {
         val mode = tmpfsDirectoryMode.value
