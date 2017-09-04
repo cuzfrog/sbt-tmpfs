@@ -74,7 +74,12 @@ and not likely to cause some unexpectation.
 You can set below in your build.sbt.
 ```scala
 tmpfsDirectoryMode := TmpfsDirectoryMode.Mount
-onLoad in Global := (onLoad in Global).value andThen (Command.process(s";project1/tmpfsOn;project2/tmpfsOn", _))
+onLoad in Global := {
+  val insertCommand: State => State =
+    (state: State) =>
+      state.copy(remainingCommands = Exec(";project1/tmpfsOn;project2/tmpfsOn", None) +: state.remainingCommands)
+  (onLoad in Global).value andThen insertCommand
+}
 ```
 ------------------
 Changing mode after the other has been done, will cause some minor inconsistency.
