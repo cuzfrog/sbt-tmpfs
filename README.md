@@ -38,7 +38,6 @@ Reboot you pc.
 Add below to `project/plugins.sbt`:
 
     addSbtPlugin("com.github.cuzfrog" % "sbt-tmpfs" % "0.3.1") //for sbt 1.0 and sbt 0.13
-    addSbtPlugin("com.github.cuzfrog" % "sbt-tmpfs" % "0.2.1") //for sbt 0.13
         
 Now, enjoy RAM speed!
 
