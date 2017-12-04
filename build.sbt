@@ -10,7 +10,7 @@ lazy val root = (project in file("."))
   .settings(
     name := "sbt-tmpfs",
     description := "sbt plugin to speed up development by leveraging tmpfs.",
-    version := "0.3.2-SNAPSHOT",
+    //version := "0.3.2-SNAPSHOT",
     libraryDependencies ++= Seq(
 
     )
