@@ -2,21 +2,26 @@ package com.github.cuzfrog.sbttmpfs
 
 import java.io.File
 
-import utest._
+import org.junit._
+import org.junit.Assert._
+import org.hamcrest.CoreMatchers._
+
 import ExMethod._
 
-object MountToolTest extends TestSuite {
+class MountToolTest {
 
   private implicit val logger: TestLogger = new TestLogger
   private val tmpDir: File = new File("/tmp")
 
-  val tests: Tests = if (!tmpDir.isOfTmpfs) {
-    logger.warn("/tmp is not of tmpfs, skip MountToolTest")
-    Tests {} //ignore
-  } else Tests {
-    "mount-already-tmpfs" - {
+  @Test
+  def mount_already_tmpfs(): Unit = {
+    if (!tmpDir.isOfTmpfs) {
+      logger.warn("/tmp is not of tmpfs, skip MountToolTest")
+    } else {
       val msg = MountTool.mountOne(tmpDir, s"sudo mount ${tmpDir.getAbsolutePath}")
       assert(msg == s"$tmpDir is already of tmpfs, abort mounting.")
     }
   }
+
+
 }

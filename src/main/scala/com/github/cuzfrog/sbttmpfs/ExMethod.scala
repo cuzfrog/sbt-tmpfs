@@ -5,13 +5,13 @@ import java.nio.file.Files
 
 import sbt.{IO, Logger}
 
-import scala.sys.process.Process
+import scala.sys.process.{Process, ProcessLogger}
 
 /**
  * Created by cuz on 17-5-7.
  */
 private object ExMethod {
-  implicit class ExFile(f: File)(implicit logger: Logger) {
+  implicit final class ExFile(f: File)(implicit logger: Logger) {
     def isLink: Boolean = Files.isSymbolicLink(f.toPath)
 
     def isOfTmpfs: Boolean = {
@@ -36,11 +36,20 @@ private object ExMethod {
     }
   }
 
-  implicit class ExString(s: String) {
+  implicit final class ExString(s: String) {
     def isDefined: Boolean = s != null && s.nonEmpty
   }
 
-  implicit class LoggerEx(in: Logger) {
-    def wrapMyLogger: Logger = new MyLogger(in)
+  implicit final class LoggerEx(in: Logger) {
+    def wrapMyLogger: MyLogger = in match {
+      case myLogger: MyLogger => myLogger
+      case logger => new MyLogger(in)
+    }
+
+    def toProcessLogger: ProcessLogger = new ProcessLogger {
+      override def err(s: => String): Unit = in.error(s)
+      override def out(s: => String): Unit = in.info(s)
+      override def buffer[T](f: => T): T = f
+    }
   }
 }

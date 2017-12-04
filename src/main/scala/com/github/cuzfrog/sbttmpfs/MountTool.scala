@@ -6,7 +6,7 @@ import ExMethod._
 import sbt._
 
 import scala.util.{Failure, Success, Try}
-import scala.sys.process.Process
+import scala.sys.process.{Process, ProcessLogger}
 
 private object MountTool {
 
@@ -45,7 +45,7 @@ private object MountTool {
     val cmd = s"$mountCmd ${targetDir.getAbsolutePath}"
     logger.debug("Try to mount, execute shell command:" + cmd)
 
-    Try(Process(cmd) !!) match {
+    Try(Process(cmd) !! logger.toProcessLogger) match {
       case Success(stdout) =>
         if (stdout.isDefined) {
           logger.error(s"tmpfs mount failed with info: $stdout")
