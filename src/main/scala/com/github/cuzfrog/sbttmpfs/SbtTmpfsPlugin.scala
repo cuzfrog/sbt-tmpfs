@@ -61,21 +61,21 @@ object SbtTmpfsPlugin extends AutoPlugin {
 
   private val taskDefinition = Seq(
     tmpfsLink := {
-      implicit val logger = streams.value.log
+      implicit val logger: Logger = streams.value.log
       val mode = tmpfsDirectoryMode.value
       if (mode == TmpfsDirectoryMode.Symlink) {
         LinkTool.link(tmpfsLinkDirectories.value, tmpfsLinkBaseDirectory.value)
       } else logger.debug(s"[SbtTmpfsPlugin] call tmpfsLink, but mode is: $mode, abort.")
     },
     tmpfsMount := {
-      implicit val logger = streams.value.log
+      implicit val logger: Logger = streams.value.log
       val mode = tmpfsDirectoryMode.value
       if (mode == TmpfsDirectoryMode.Mount) {
         MountTool.mount(tmpfsMountDirectories.value, tmpfsMountCommand.value)
       } else logger.debug(s"[SbtTmpfsPlugin] call tmpfsMount, but mode is: $mode abort.")
     },
     tmpfsSyncMapping := Def.taskDyn {
-      implicit val logger = streams.value.log
+      implicit val logger: Logger = streams.value.log
       val mode = tmpfsDirectoryMode.value
       logger.debug(s"[SbtTmpfsPlugin] sync mapping with mode: $mode")
       mode match {

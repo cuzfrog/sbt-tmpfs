@@ -9,11 +9,11 @@ lazy val root = (project in file("."))
   .settings(
     name := "sbt-tmpfs",
     description := "sbt plugin to speed up development by leveraging tmpfs.",
-    //version := "0.2.1-SNAPSHOT",
+    version := "0.3.2-SNAPSHOT",
     libraryDependencies ++= Seq(
 
     ),
     reColors := Seq("magenta")
   )
 
-addCompilerPlugin("org.psywerx.hairyfotr" %% "linter" % "0.1.17")
+//addCompilerPlugin("org.psywerx.hairyfotr" %% "linter" % "0.1.17")
