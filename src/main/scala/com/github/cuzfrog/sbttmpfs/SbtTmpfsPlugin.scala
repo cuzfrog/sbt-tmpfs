@@ -67,7 +67,7 @@ object SbtTmpfsPlugin extends AutoPlugin {
   private val taskDefinition = Seq(
     tmpfsLink := Def.taskDyn {
       implicit val logger: Logger = streams.value.log.wrapMyLogger
-      if (isCi) Def.task(logger.debug("CI environment, abort linking."))
+      if (isCi) ciAbortTask
       else {
         val mode = tmpfsDirectoryMode.value
         if (mode == TmpfsDirectoryMode.Symlink) {
@@ -77,7 +77,7 @@ object SbtTmpfsPlugin extends AutoPlugin {
     }.value,
     tmpfsMount := Def.taskDyn {
       implicit val logger: Logger = streams.value.log.wrapMyLogger
-      if (isCi) Def.task(logger.debug("CI environment, abort mounting."))
+      if (isCi) ciAbortTask
       else {
         val mode = tmpfsDirectoryMode.value
         if (mode == TmpfsDirectoryMode.Mount) {
@@ -87,7 +87,7 @@ object SbtTmpfsPlugin extends AutoPlugin {
     }.value,
     tmpfsSyncMapping := Def.taskDyn {
       implicit val logger: Logger = streams.value.log.wrapMyLogger
-      if (isCi) Def.task(logger.debug("CI environment, abort sync."))
+      if (isCi) ciAbortTask
       else {
         val mode = tmpfsDirectoryMode.value
         logger.debug(s"sync mapping with mode: $mode")
@@ -128,4 +128,6 @@ object SbtTmpfsPlugin extends AutoPlugin {
     defaultSbtTmpfsSettings ++ taskDefinition ++ taskDependentRelationships
 
   private def isCi: Boolean = sys.env.contains("CI")
+  private def ciAbortTask(implicit logger: Logger): Def.Initialize[Task[Unit]] =
+    Def.task(logger.debug("CI environment, abort linking."))
 }

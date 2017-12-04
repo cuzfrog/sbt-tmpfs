@@ -9,7 +9,7 @@ import scala.collection.mutable.ArrayBuffer
 private final class TestLogger extends Logger {
   private val buffer: ArrayBuffer[String] = ArrayBuffer.empty
 
-  override def trace(t: Throwable): Unit = buffer.synchronized {
+  override def trace(t: => Throwable): Unit = buffer.synchronized {
     val stackTrace = t.getStackTrace.mkString(System.lineSeparator())
     buffer += ("[trace]" + stackTrace)
   }
