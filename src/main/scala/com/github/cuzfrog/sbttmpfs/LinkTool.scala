@@ -36,7 +36,7 @@ private object LinkTool {
   /** Return error message if failed. */
   def linkOne(targetDir: File, baseTmpfsDirectory: File)(implicit logger: Logger): String = {
     if (targetDir.isActiveLink || targetDir.isOfTmpfs) {
-      val msg = s"[SbtTmpfsPlugin] $targetDir is already an active symlink or of tmpfs, abort linking."
+      val msg = s"$targetDir is already an active symlink or of tmpfs, abort linking."
       logger.debug(msg)
       return msg
     }
@@ -44,7 +44,7 @@ private object LinkTool {
     if (!baseTmpfsDirectory.exists) IO.createDirectory(baseTmpfsDirectory)
 
     if (!baseTmpfsDirectory.isOfTmpfs) {
-      val msg = s"[SbtTmpfsPlugin]Base directory:${baseTmpfsDirectory.getAbsolutePath}" +
+      val msg = s"Base directory:${baseTmpfsDirectory.getAbsolutePath}" +
         s" is not of tmpfs. Abort linking. Please mount it with tmpfs first."
       logger.warn(msg)
       return msg
@@ -54,7 +54,7 @@ private object LinkTool {
       val randomBaseDir = IO.createUniqueDirectory(baseTmpfsDirectory)
       val f = Paths.get(randomBaseDir.getAbsolutePath, targetDir.getName).toFile
       IO.createDirectory(f)
-      logger.debug("[SbtTmpfsPlugin] new tmpfs dir created:" + f.getAbsolutePath)
+      logger.debug("new tmpfs dir created:" + f.getAbsolutePath)
       f
     }
 
@@ -66,11 +66,11 @@ private object LinkTool {
     if (!targetDir.getParentFile.exists) IO.createDirectory(targetDir.getParentFile)
 
     val cmd = s"ln -snf ${tmpfsDir.getAbsolutePath} ${targetDir.getParent}/"
-    logger.debug("[SbtTmpfsPlugin] Try to link, execute shell command:" + cmd)
+    logger.debug("Try to link, execute shell command:" + cmd)
     val output = Process(cmd) !!
 
     if (output.isDefined) {
-      logger.error(s"[SbtTmpfsPlugin] tmpfs link failed with info: $output")
+      logger.error(s"tmpfs link failed with info: $output")
       output
     } else {
       //if linking is successful, record symlink and its linked-target tmpfs dir.
@@ -87,7 +87,7 @@ private object LinkTool {
     links.foreach { syml =>
       if (syml.isLink && !syml.isActiveLink) {
         IO.delete(syml)
-        logger.debug(s"[SbtTmpfsPlugin] $syml is a dead link. deleted.")
+        logger.debug(s"$syml is a dead link. deleted.")
       }
     }
   }

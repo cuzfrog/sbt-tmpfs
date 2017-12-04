@@ -6,15 +6,15 @@ import java.nio.file.Files
 import sbt.{IO, Logger, Process}
 
 /**
-  * Created by cuz on 17-5-7.
-  */
+ * Created by cuz on 17-5-7.
+ */
 private object ExMethod {
   implicit class ExFile(f: File)(implicit logger: Logger) {
     def isLink: Boolean = Files.isSymbolicLink(f.toPath)
 
     def isOfTmpfs: Boolean = {
       if (!f.exists) {
-        logger.debug(s"[SbtTmpfsPlugin] check if ${f.getAbsolutePath} is of tmpfs, while the file does not exist.")
+        logger.debug(s"check if ${f.getAbsolutePath} is of tmpfs, while the file does not exist.")
         return false
       }
       val existingTmpfsDirs = Process("df").!!.split(raw"""${IO.Newline}""")
@@ -27,7 +27,7 @@ private object ExMethod {
 
     def getLinkTarget: Option[File] = {
       if (!f.isActiveLink) {
-        logger.debug(s"[SbtTmpfsPlugin] ${f.getAbsolutePath} is not an active link, which has no link target.")
+        logger.debug(s"${f.getAbsolutePath} is not an active link, which has no link target.")
         return None
       }
       Some(f.getCanonicalFile)
@@ -36,5 +36,9 @@ private object ExMethod {
 
   implicit class ExString(s: String) {
     def isDefined: Boolean = s != null && s.nonEmpty
+  }
+
+  implicit class LoggerEx(in: Logger) {
+    def wrapMyLogger: Logger = new MyLogger(in)
   }
 }

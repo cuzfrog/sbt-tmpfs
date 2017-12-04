@@ -7,29 +7,29 @@ import scala.annotation.tailrec
 import scala.util.Random
 
 /**
-  * Compare under different mount of files, which of `rsync`, `sbt.IO.copy` is better at dir synchronization.
-  *
-  * sbt.IO.copyDirectories provides fairly smart implementation of files copying.
-  * Modern `rsync` brings good performance.
-  *
-  */
-object RsyncVsSbtCopyTest {
+ * Compare under different mount of files, which of `rsync`, `sbt.IO.copy` is better at dir synchronization.
+ *
+ * sbt.IO.copyDirectories provides fairly smart implementation of files copying.
+ * Modern `rsync` brings good performance.
+ *
+ */
+private object RsyncVsSbtCopyTest {
 
-  val originalDirs = Seq(
+  private val originalDirs = Seq(
     TestDirGrp("small", new File("/tmp/small"), 100, 10, 3),
     TestDirGrp("medium", new File("/tmp/medium"), 1000, 100, 6),
     TestDirGrp("big", new File("/tmp/big"), 10000, 100, 12),
     TestDirGrp("big2", new File("/tmp/big2"), 1000, 1000, 12)
   ).map(FileGen.populateDir)
 
-  val ramDirs = originalDirs.map { grp =>
+  private val ramDirs = originalDirs.map { grp =>
     val dir = new File("/tmp/t1/" + grp.name)
     if (dir.exists) sbt.IO.delete(dir)
     sbt.IO.copyDirectory(grp.dir, dir)
     grp.copy(dir = dir, name = grp.name + "-ram")
   }
 
-  val ssdDirs = originalDirs.filter(g => !g.name.contains("big")).map { grp =>
+  private val ssdDirs = originalDirs.filter(g => !g.name.contains("big")).map { grp =>
     val dir = new File("/home/cuz/t1/" + grp.name)
     if (dir.exists) sbt.IO.delete(dir)
     sbt.IO.copyDirectory(grp.dir, dir)
@@ -51,7 +51,7 @@ object RsyncVsSbtCopyTest {
         case Some("sbt") => syncTestSbt(grp, 10, sbt.IO.copyDirectory(_, _), "sbt")
         case Some("rsync") => syncTestSbt(grp, 10, rsync, "rsync")
         case Some("cp") => syncTestSbt(grp, 10, cp, "cp")
-        case _ => ???
+        case _ => throw new UnsupportedOperationException
       }
     }
     println("Result:")
@@ -73,7 +73,8 @@ object RsyncVsSbtCopyTest {
                           warmTimes: Int = 3): TestResult = {
     val dest = sbt.IO.createTemporaryDirectory
     sbt.IO.copyDirectory(grp.dir, dest)
-    def updateDir() = FileGen.updateDir(grp.dir.toPath, grp.fileTotalCount / 20, grp.maxFileSizeInKB, grp.fileTotalCount / 20)
+    def updateDir(): Unit =
+      FileGen.updateDir(grp.dir.toPath, grp.fileTotalCount / 20, grp.maxFileSizeInKB, grp.fileTotalCount / 20)
     println("-----------------------------")
     println(s"Test($functionName|${grp.name}) warms up:")
     (1 to warmTimes).foreach { i =>

@@ -2,6 +2,7 @@ package com.github.cuzfrog.sbttmpfs
 
 import sbt.{Def, _}
 import Keys._
+import ExMethod.LoggerEx
 
 object SbtTmpfsPlugin extends AutoPlugin {
 
@@ -61,23 +62,23 @@ object SbtTmpfsPlugin extends AutoPlugin {
 
   private val taskDefinition = Seq(
     tmpfsLink := {
-      implicit val logger: Logger = streams.value.log
+      implicit val logger: Logger = streams.value.log.wrapMyLogger
       val mode = tmpfsDirectoryMode.value
       if (mode == TmpfsDirectoryMode.Symlink) {
         LinkTool.link(tmpfsLinkDirectories.value, tmpfsLinkBaseDirectory.value)
-      } else logger.debug(s"[SbtTmpfsPlugin] call tmpfsLink, but mode is: $mode, abort.")
+      } else logger.debug(s"call tmpfsLink, but mode is: $mode, abort.")
     },
     tmpfsMount := {
-      implicit val logger: Logger = streams.value.log
+      implicit val logger: Logger = streams.value.log.wrapMyLogger
       val mode = tmpfsDirectoryMode.value
       if (mode == TmpfsDirectoryMode.Mount) {
         MountTool.mount(tmpfsMountDirectories.value, tmpfsMountCommand.value)
-      } else logger.debug(s"[SbtTmpfsPlugin] call tmpfsMount, but mode is: $mode abort.")
+      } else logger.debug(s"call tmpfsMount, but mode is: $mode abort.")
     },
     tmpfsSyncMapping := Def.taskDyn {
-      implicit val logger: Logger = streams.value.log
+      implicit val logger: Logger = streams.value.log.wrapMyLogger
       val mode = tmpfsDirectoryMode.value
-      logger.debug(s"[SbtTmpfsPlugin] sync mapping with mode: $mode")
+      logger.debug(s"sync mapping with mode: $mode")
       mode match {
         case TmpfsDirectoryMode.Symlink => Def.task {
           SyncTool.syncByLink(tmpfsMappingDirectories.value, tmpfsLinkBaseDirectory.value)
@@ -94,8 +95,8 @@ object SbtTmpfsPlugin extends AutoPlugin {
       }
     }.value,
     (initialize in Compile) := {
-      implicit val logger = sLog.value
-      logger.debug("[SbtTmpfsPlugin] try to clean dead symlinks.")
+      implicit val logger: Logger = sLog.value.wrapMyLogger
+      logger.debug("try to clean dead symlinks.")
       LinkTool.cleanDeadLinks(target.value.listFiles()) //clean possible different cross version.
       LinkTool.cleanDeadLinks(tmpfsLinkDirectories.value)
       LinkTool.cleanDeadLinks(tmpfsMappingDirectories.value.values.flatten.toSeq)

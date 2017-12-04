@@ -17,7 +17,7 @@ private object SyncTool {
       if (!dest.isActiveLink && !dest.isOfTmpfs) {
         //if link failed, abort sync.
         if (LinkTool.linkOne(dest, baseTmpfsDirectory).isDefined) {
-          logger.debug(s"[SbtTmpfsPlugin] link failed, abort sync. Dest path: $dest")
+          logger.debug(s"link failed, abort sync. Dest path: $dest")
           return
         }
       }
@@ -36,7 +36,7 @@ private object SyncTool {
       if (!dest.isActiveLink && !dest.isOfTmpfs) {
         //if mounting failed, abort sync.
         if (MountTool.mountOne(dest, mountCmd).isDefined) {
-          logger.debug(s"[SbtTmpfsPlugin] mount failed, abort sync. Dest path: $dest")
+          logger.debug(s"mount failed, abort sync. Dest path: $dest")
           return
         }
       }
@@ -49,13 +49,13 @@ private object SyncTool {
   private def check(in: (File, File))(implicit logger: Logger): Boolean = {
     val (src, dest) = in
     if (!src.exists || !src.isDirectory) {
-      logger.warn(s"[SbtTmpfsPlugin] source dir does not exist or is not a dir, abort sync." +
+      logger.warn(s"source dir does not exist or is not a dir, abort sync." +
         s" Path: ${src.getAbsolutePath}")
       return false
     }
 
     if (dest.exists && !dest.isLink && !dest.isDirectory) {
-      logger.warn(s"[SbtTmpfsPlugin] dest dir exists, but not a link or dir," +
+      logger.warn(s"dest dir exists, but not a link or dir," +
         s" so should not overwrite it, abort sync. Path: ${src.getAbsolutePath}")
       return false
     }
@@ -65,7 +65,7 @@ private object SyncTool {
 
   //see fileSyncTest/FileSyncTest.md.
   private def sync(src: File, dest: File)(implicit logger: Logger): Unit = {
-    logger.debug(s"[SbtTmpfsPlugin] sync from $src to $dest.")
+    logger.debug(s"sync from $src to $dest.")
     sbt.Process(s"""cp -au ${src.getAbsolutePath}/. ${dest.getAbsolutePath}""").!
   }
 }

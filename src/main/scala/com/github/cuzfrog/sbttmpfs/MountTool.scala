@@ -5,18 +5,21 @@ import java.io.File
 import ExMethod._
 import sbt._
 
+import scala.util.{Failure, Success, Try}
+
 private object MountTool {
 
   /**
-    * Try to mount target directories with tmpfs.
-    * <br><br>
-    * If target is not directory or does not exist, abort.
-    * If target is already of tmpfs, abort.
-    *
-    * @param targetDirs the target directories to mount with tmpfs.
-    * @param mountCmd   the shell mount command string.
-    * @param logger     sbt logger.
-    */
+   * Try to mount target directories with tmpfs.
+   * <br><br>
+   * If target is not directory or does not exist, abort.
+   * If target is already of tmpfs, abort.
+   * When no tty present and no askpass program specified, mount will fail.
+   *
+   * @param targetDirs the target directories to mount with tmpfs.
+   * @param mountCmd   the shell mount command string.
+   * @param logger     sbt logger.
+   */
   def mount(targetDirs: Seq[File], mountCmd: String)(implicit logger: Logger): Unit = {
     targetDirs.foreach { targetDir =>
       mountOne(targetDir, mountCmd)
@@ -26,24 +29,32 @@ private object MountTool {
   /** Return error message if failed. */
   def mountOne(targetDir: File, mountCmd: String)(implicit logger: Logger): String = {
     if (!targetDir.isDirectory) {
-      val msg = s"[SbtTmpfsPlugin] targetDir is not a directory," +
-        s" abort mounting tmpfs. Path:${targetDir.getAbsolutePath}"
+      val msg = "targetDir is not a directory," +
+        " abort mounting tmpfs. Path:${targetDir.getAbsolutePath}"
       logger.warn(msg)
       return msg
     }
 
     if (targetDir.isOfTmpfs) {
-      val msg = s"[SbtTmpfsPlugin] $targetDir is already of tmpfs, abort mounting."
+      val msg = "$targetDir is already of tmpfs, abort mounting."
       logger.debug(msg)
       return msg
     }
+
     val cmd = s"$mountCmd ${targetDir.getAbsolutePath}"
-    logger.debug("[SbtTmpfsPlugin] Try to mount, execute shell command:" + cmd)
-    val output = Process(cmd).!!
-    if (output.isDefined) {
-      logger.error(s"[SbtTmpfsPlugin] tmpfs mount failed with info: $output")
-      output
+    logger.debug("Try to mount, execute shell command:" + cmd)
+
+
+    Try(Process(cmd) !! logger) match {
+      case Success(stdout) =>
+        if (stdout.isDefined) {
+          logger.error(s"tmpfs mount failed with info: $stdout")
+        }
+        stdout
+      case Failure(t) =>
+        logger.error(s"tmpfs mount failed with non-zero exit code")
+        t.getMessage
     }
-    ""
   }
+
 }
