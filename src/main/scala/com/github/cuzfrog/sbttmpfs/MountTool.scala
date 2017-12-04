@@ -45,7 +45,7 @@ private object MountTool {
     val cmd = s"$mountCmd ${targetDir.getAbsolutePath}"
     logger.debug("Try to mount, execute shell command:" + cmd)
 
-    Try(Process(cmd) !! logger) match {
+    Try(Process(cmd) !!) match {
       case Success(stdout) =>
         if (stdout.isDefined) {
           logger.error(s"tmpfs mount failed with info: $stdout")
