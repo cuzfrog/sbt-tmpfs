@@ -5,6 +5,8 @@ import java.io.File
 import ExMethod._
 import sbt._
 
+import scala.sys.process.Process
+
 /**
   * Created by cuz on 17-5-7.
   */
@@ -66,6 +68,6 @@ private object SyncTool {
   //see fileSyncTest/FileSyncTest.md.
   private def sync(src: File, dest: File)(implicit logger: Logger): Unit = {
     logger.debug(s"sync from $src to $dest.")
-    sbt.Process(s"""cp -au ${src.getAbsolutePath}/. ${dest.getAbsolutePath}""").!
+    Process(s"""cp -au --no-preserve=timestamps ${src.getAbsolutePath}/. ${dest.getAbsolutePath}""").!
   }
 }

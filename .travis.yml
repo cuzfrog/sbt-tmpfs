@@ -4,7 +4,7 @@ sudo: false
 language: scala
 
 scala:
-   - 2.10.6
+   - 2.12.3
 
 jdk:
   - oraclejdk8
@@ -14,17 +14,14 @@ cache:
     - $HOME/.ivy2/cache
     - $HOME/.sbt
 
-script:
-  #- sbt ++$TRAVIS_SCALA_VERSION -Dfile.encoding=UTF8 -J-XX:ReservedCodeCacheSize=256M -J-Xms1024M test
-
 before_cache:
   # Cleanup the cached directories to avoid unnecessary cache updates
-  - find $HOME/.ivy2/cache -name "ivydata-*.properties" -print -delete
-  - find $HOME/.sbt        -name "*.lock"               -print -delete
+  - find $HOME/.ivy2/cache -name "ivydata-*.properties" -print -delete > /dev/null
+  - find $HOME/.sbt        -name "*.lock"               -print -delete > /dev/null
 
 deploy:
   provider: script
-  script: sbt ";generateCredential;set isSnapshot in ThisBuild := false;publish"
+  script: sbt ";generateCredential;set isSnapshot in ThisBuild := false;^ publish"
   on:
     all_branches: true
     tags: true

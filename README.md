@@ -4,8 +4,8 @@
 # sbt-tmpfs
 sbt plugin that automatically "tmpfsifies" directories to speed up development.
 
-There are known [issues](https://github.com/cuzfrog/sbt-tmpfs/issues), feel free to fire issues.
-   
+sbt 1.0.0.  For those of you who have trouble downloading `doc` and `src` through IDEA,  use `reload plugins` then `updateClassifiers` in console.
+
 ## Why tmpfs?
 
 Comparison with common specs:
@@ -37,7 +37,7 @@ Reboot you pc.
 
 Add below to `project/plugins.sbt`:
 
-    addSbtPlugin("com.github.cuzfrog" % "sbt-tmpfs" % "0.2.1")
+    addSbtPlugin("com.github.cuzfrog" % "sbt-tmpfs" % "0.3.1") //for sbt 1.0 and sbt 0.13
         
 Now, enjoy RAM speed!
 
@@ -53,9 +53,9 @@ There are 2 strategies to use tmpfs:
 
 **Symlink** is the default one, since it does not require super. 
 Default linking dirs include `crossTarget` and `target/resolution-cache`. Add more dirs to be linked:
-
-    tmpfsLinkDirectories ++= Seq(//your dirs here.)
-
+```scala
+tmpfsLinkDirectories ++= Seq(//your dirs here.)
+```
 Broken symlink will be overwrite by sbt-tmpfs.
 (Symlink of some dir like `streams` may lead to sbt error when symlink is broken after a reboot.)
 The base tmpfs dir where symlinks point to, by default, is `/tmp`, 
@@ -64,17 +64,23 @@ which is controlled by `tmpfsLinkBaseDirectory`.
 When **Mount** mode is in use, sbt command line may require super password to execute shell command.
 Mount size limit key:`tmpfsMountSizeLimit` , shell command can also be changed by `tmpfsMountCommand`.
 Default mount point is `target`. Add more dirs to be mounted:
-
-    tmpfsMountDirectories ++= Seq(//your dirs here.)
-
+```scala
+tmpfsMountDirectories ++= Seq(//your dirs here.)
+```
 In fact, _Mount_ mode is recommended. It's easier to handle in most cases,
 and not likely to cause some unexpectation.
 
-(currently I haven't figured out how to properly deal with super privilege.
-You need to manually execute task `tmpfsOn` to mount and sync. Help requested..)
-
-You can set `tmpfsDirectoryMode := TmpfsDirectoryMode.Mount` in your build.sbt.
-
+You can set below in your build.sbt.
+```scala
+tmpfsDirectoryMode := TmpfsDirectoryMode.Mount
+onLoad in Global := {
+  val insertCommand: State => State =
+    (state: State) =>
+      state.copy(remainingCommands = Exec(";project1/tmpfsOn;project2/tmpfsOn", None) +: state.remainingCommands)
+  (onLoad in Global).value andThen insertCommand
+}
+```
+------------------
 Changing mode after the other has been done, will cause some minor inconsistency.
 For example: if `target` has been mounted first, `tmpfsLink` task may have no effect.
 It will realize that dirs inside `target` are all of tmpfs now, so it aborts linking.
@@ -102,11 +108,11 @@ On initializing, sbt-tmpfs will try to clean dead(broken) symlinks, possibly cre
 ### Map and sync dirs:
 Sometimes, we want to speedup some dirs while wanting to preserve them on disk, like `node_modules`,
 we can map these dirs.
-
-    tmpfsMappingDirectories := Map(
-      sourceDir -> Seq(destDir) //sourceDir is somewhere on disk.
-    )
-    
+```scala
+tmpfsMappingDirectories := Map(
+  sourceDir -> Seq(destDir) //sourceDir is somewhere on disk.
+)
+```  
 sbt-tmpfs will link/mount `destDir` with tmpfs,
 if they are not an active symlink or already of tmpfs,
 and automatically does one-way-synchronization: from source to destination.
@@ -115,16 +121,15 @@ There is an Interesting [Test: sbt.IO-vs-rsync-vs-cp](fileSyncTest/FileSyncTest.
  about choosing which method to do the sync.
  
 `destDir`s have been added to `cleanKeepFiles` by sbt-tmpfs automatically.
-(But this seems not working? Help requested..)
 
 ### Debug info:
-sbt-tmpfs has thorough debug log. Set log level to debug to tasks respectively:
-
-   logLevel in tmpfsOn := Level.Debug
-   logLevel in tmpfsLink := Level.Debug
-   logLevel in tmpfsMount := Level.Debug
-   logLevel in tmpfsSyncMapping := Level.Debug
-
+sbt-tmpfs has thorough debug log. Set log level to debug in tasks respectively:
+```scala
+logLevel in tmpfsOn := Level.Debug
+logLevel in tmpfsLink := Level.Debug
+logLevel in tmpfsMount := Level.Debug
+logLevel in tmpfsSyncMapping := Level.Debug
+```
 ## About
 
 Author: Cause Chung (cuzfrog@139.com)

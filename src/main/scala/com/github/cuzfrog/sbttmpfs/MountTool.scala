@@ -6,6 +6,7 @@ import ExMethod._
 import sbt._
 
 import scala.util.{Failure, Success, Try}
+import scala.sys.process.Process
 
 private object MountTool {
 

@@ -8,6 +8,8 @@ import sbt._
 import scala.collection.concurrent.TrieMap
 import ExMethod._
 
+import scala.sys.process.Process
+
 private object LinkTool {
 
   //symlinks and their target tmpfs dir, used for clean old links after task clean.

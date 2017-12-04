@@ -3,7 +3,9 @@ package com.github.cuzfrog.sbttmpfs
 import java.io.File
 import java.nio.file.Files
 
-import sbt.{IO, Logger, Process}
+import sbt.{IO, Logger}
+
+import scala.sys.process.Process
 
 /**
  * Created by cuz on 17-5-7.
