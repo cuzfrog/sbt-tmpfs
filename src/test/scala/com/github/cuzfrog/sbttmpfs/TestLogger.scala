@@ -24,4 +24,7 @@ private final class TestLogger extends Logger {
     buffer.foreach(println)
     buffer.clear()
   }
+
+  def clearBuffer(): Unit = buffer.synchronized {buffer.clear()}
+  def getBufferContent: Seq[String] = buffer.clone()
 }

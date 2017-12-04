@@ -30,20 +30,19 @@ private object MountTool {
   def mountOne(targetDir: File, mountCmd: String)(implicit logger: Logger): String = {
     if (!targetDir.isDirectory) {
       val msg = "targetDir is not a directory," +
-        " abort mounting tmpfs. Path:${targetDir.getAbsolutePath}"
+        s" abort mounting tmpfs. Path:${targetDir.getAbsolutePath}"
       logger.warn(msg)
       return msg
     }
 
     if (targetDir.isOfTmpfs) {
-      val msg = "$targetDir is already of tmpfs, abort mounting."
+      val msg = s"$targetDir is already of tmpfs, abort mounting."
       logger.debug(msg)
       return msg
     }
 
     val cmd = s"$mountCmd ${targetDir.getAbsolutePath}"
     logger.debug("Try to mount, execute shell command:" + cmd)
-
 
     Try(Process(cmd) !! logger) match {
       case Success(stdout) =>
@@ -52,7 +51,7 @@ private object MountTool {
         }
         stdout
       case Failure(t) =>
-        logger.error(s"tmpfs mount failed with non-zero exit code")
+        logger.error("tmpfs mount failed with non-zero exit code")
         t.getMessage
     }
   }
