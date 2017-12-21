@@ -37,7 +37,7 @@ Reboot you pc.
 
 Add below to `project/plugins.sbt`:
 
-    addSbtPlugin("com.github.cuzfrog" % "sbt-tmpfs" % "0.3.2") //for sbt 1.0 and sbt 0.13
+    addSbtPlugin("com.github.cuzfrog" % "sbt-tmpfs" % "0.3.3") //for sbt 1.0 and sbt 0.13
         
 Now, enjoy RAM speed!
 
@@ -120,7 +120,8 @@ and automatically does one-way-synchronization: from source to destination.
 There is an Interesting [Test: sbt.IO-vs-rsync-vs-cp](fileSyncTest/FileSyncTest.md)
  about choosing which method to do the sync.
  
-`destDir`s have been added to `cleanKeepFiles` by sbt-tmpfs automatically.
+`destDir`s are added to `cleanKeepFiles` by sbt-tmpfs automatically
+(but only direct children of `target` take effect).
 
 ### Debug info:
 sbt-tmpfs has thorough debug log. Set log level to debug in tasks respectively:

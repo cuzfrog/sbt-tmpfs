@@ -57,7 +57,7 @@ object SbtTmpfsPlugin extends AutoPlugin {
       tmpfsMappingDirectories := Map.empty,
       cleanKeepFiles ++= {
         val mappingDirs = tmpfsMappingDirectories.value.values.toSeq.flatten
-        mappingDirs.filter(_.absolutePath.startsWith(target.value.absolutePath)) //under target
+        mappingDirs.filter(_.getParentFile.getCanonicalPath == target.value.getCanonicalPath) //direct under target
       }
     )
   }
