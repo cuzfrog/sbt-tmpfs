@@ -1,9 +1,8 @@
-import sbt.Keys._
 import Settings._
 
 shellPrompt in ThisBuild := { state => Project.extract(state).currentRef.project + "> " }
 sbtPlugin := true
-crossSbtVersions := Vector("0.13.16", "1.0.4")
+crossSbtVersions := Vector("0.13.16", "1.1.0")
 
 lazy val root = (project in file("."))
   .settings(commonSettings ++ publicationSettings: _*)

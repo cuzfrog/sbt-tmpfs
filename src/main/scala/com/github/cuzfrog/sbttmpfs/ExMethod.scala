@@ -43,7 +43,7 @@ private object ExMethod {
   implicit final class LoggerEx(in: Logger) {
     def wrapMyLogger: MyLogger = in match {
       case myLogger: MyLogger => myLogger
-      case logger => new MyLogger(in)
+      case logger => new MyLogger(logger)
     }
 
     def toProcessLogger: ProcessLogger = new ProcessLogger {

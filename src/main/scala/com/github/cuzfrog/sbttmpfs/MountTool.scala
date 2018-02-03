@@ -2,11 +2,11 @@ package com.github.cuzfrog.sbttmpfs
 
 import java.io.File
 
-import ExMethod._
+import com.github.cuzfrog.sbttmpfs.ExMethod._
 import sbt._
 
+import scala.sys.process.Process
 import scala.util.{Failure, Success, Try}
-import scala.sys.process.{Process, ProcessLogger}
 
 private object MountTool {
 
