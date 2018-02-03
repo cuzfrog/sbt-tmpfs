@@ -4,7 +4,7 @@
 # sbt-tmpfs
 sbt plugin that automatically "tmpfsifies" directories to speed up development.
 
-sbt 1.0.0.  For those of you who have trouble downloading `doc` and `src` through IDEA,  use `reload plugins` then `updateClassifiers` in console.
+sbt 1.0.0+.  For those of you who have trouble downloading `doc` and `src` through IDEA,  use `reload plugins` then `updateClassifiers` in console.
 
 ## Why tmpfs?
 
@@ -37,7 +37,7 @@ Reboot you pc.
 
 Add below to `project/plugins.sbt`:
 
-    addSbtPlugin("com.github.cuzfrog" % "sbt-tmpfs" % "0.3.3") //for sbt 1.0 and sbt 0.13
+    addSbtPlugin("com.github.cuzfrog" % "sbt-tmpfs" % "0.3.4") //for sbt 1.1 and sbt 0.13
         
 Now, enjoy RAM speed!
 
